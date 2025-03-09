@@ -1,84 +1,62 @@
 import sys
-from PyQt5.QtWidgets import (QApplication, QMainWindow,QLabel,QWidget,
-                             QVBoxLayout, QHBoxLayout, QGridLayout)
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt # alignments
-from PyQt5.QtGui import QPixmap
+import os
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget,
+                             QHBoxLayout, QVBoxLayout, QLabel, QSizePolicy)
+from PyQt5.QtGui import QFont, QFontDatabase
+from PyQt5.QtCore import Qt
 
 class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("GUI Test")
-        self.setGeometry(250, 250, 1000, 700)
-
-        '''
-        LABELS
-        label = QLabel("Hi there", self)
-        label.setFont(QFont("Helvetica", 20))
-        label.setGeometry(0,0,500,100)
-        label.setStyleSheet("color:red;"
-                            "background-color:green;"
-                            "font-size:30px;"
-                            "font-weight:bold;"
-                            "font-style:italic;"
-                            "text-decoration:underline;")
-
-        label.setAlignment(Qt.AlignCenter)'''
-
-
-        '''
-        IMAGES
-        label = QLabel(self)
-        label.setGeometry(0,0,250,250)
-        pixmap = QPixmap("assets/phoenix.png")
-        label.setPixmap(pixmap)
-        label.setScaledContents(True)
-
-        label.setGeometry((self.width() - label.width()) // 2, (self.height() - label.height()) // 2 , label.width(), label.height())
-        '''
-
         self.initUI()
 
-    def initUI(self): # common method for initalising UI
-        # self always = window
+    def initUI(self):
+        self.setWindowTitle("Python Graphing Calculator")
+        self.setFixedSize(1100, 650)
+
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
 
-        label1 = QLabel("1", self)
-        label2 = QLabel("2", self)
-        label3 = QLabel("3", self)
-        label4 = QLabel("4", self)
-        label5 = QLabel("5", self)
+        main_layout = QHBoxLayout(central_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        label1.setStyleSheet("background-color:green")
-        label2.setStyleSheet("background-color:yellow")
-        label3.setStyleSheet("background-color:red")
-        label4.setStyleSheet("background-color:blue")
-        label5.setStyleSheet("background-color:purple")
+        # Add Font of Application
+        font_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "assets", "fonts", "Righteous-Regular.ttf"))
+        ids = QFontDatabase.addApplicationFont(font_path)
+        if ids < 0: print("Error adding font")
+        families = QFontDatabase.applicationFontFamilies(ids)
 
-        #these overlap! so use a layout manager
+        # --- MENU SECTION ---
+        left_section = QWidget()
+        left_section.setStyleSheet("background-color: #f3f3f3;")
+        left_section.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        vbox = QVBoxLayout()
-        vbox.addWidget(label1)
-        vbox.addWidget(label2)
-        vbox.addWidget(label3)
-        vbox.addWidget(label4)
-        vbox.addWidget(label5)
+        left_layout = QVBoxLayout(left_section)
 
-        central_widget.setLayout(vbox)
+        title_label = QLabel("Graphing Calculator", self)
+        title_label.setAlignment(Qt.AlignTop)
+        title_label.setStyleSheet("color: #595959;")
+        title_label.setFont(QFont(families[0], 30))
 
-        #for horizontal - replace vbox with hbox
-        #can also do grid = QGridLayout
-        #eg. grid = addWidget(label, 0 , 0) where numbers are rows and columns
+        left_layout.addWidget(title_label)
+        left_section.setLayout(left_layout)
 
+        # --- GRAPH SECTION ---
+        right_section = QWidget()
+        right_section.setStyleSheet("background-color: white;")
+        right_section.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-# for learning purposes // TO DELETE
+        # Adding sections to window
+        main_layout.addWidget(left_section, 1)
+        main_layout.addWidget(right_section, 3)
+
 def main():
-    pass
-
-if __name__ == '__main__': # if we are running the file directly
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
+
+if __name__ == '__main__':
+    main()
