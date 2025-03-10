@@ -14,7 +14,7 @@ class GraphCanvas(FigureCanvas):
         self.plot_default_graph()
 
     def plot_default_graph(self):
-        """Plots a 4-quadrant grid."""
+        # Plots a 4-quadrant grid.
         self.ax.clear()
         self.ax.set_xlim(-10.5, 10.5)
         self.ax.set_ylim(-10.5, 10.5)

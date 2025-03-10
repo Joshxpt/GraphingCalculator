@@ -126,7 +126,7 @@ class MainWindow(QMainWindow):
         return btn
 
     def add_equation_box(self):
-        """Creates a new equation input box and updates the UI."""
+        # Creates a new equation input box and updates the UI.
 
         if len(self.equation_boxes) >= 10:
             QMessageBox.warning(self, "Limit Reached", "You have reached the maximum allowed equations.")
@@ -151,6 +151,8 @@ class MainWindow(QMainWindow):
         eye_button.setIconSize(QSize(20, 20))
         eye_button.setStyleSheet("border: none;")
 
+        eye_button.clicked.connect(lambda: self.toggle_visibility(equation_widget, eye_button))
+
         # Equation input box
         equation_input = QLineEdit()
         equation_input.setPlaceholderText("Enter equation...")
@@ -171,29 +173,24 @@ class MainWindow(QMainWindow):
         self.equation_boxes.append(equation_widget)
 
     def process_equation(self, equation_input, equation_widget):
-        """Processes the input equation, updates tracking, and redraws the graph."""
+        # Processes the input equation, updates tracking, and redraws the graph.
         equation_text = equation_input.text().strip()
 
-        # ✅ Ensure parsing was successful
         parsed_equation = parse_linear_equation(equation_text)
         if parsed_equation is None:
             QMessageBox.warning(self, "Invalid Equation", "Please enter a valid linear equation (e.g., 'y = 2x + 1').")
-            return  # ✅ Exit function if parsing failed
+            return
+        m, b = parsed_equation
 
-        m, b = parsed_equation  # ✅ Only runs if parsing was successful
-
-        # ✅ Check if equation already exists
-        for i, (widget, _, _, _) in enumerate(self.equations):
+        for i, (widget, _, _, color, visible) in enumerate(self.equations):
             if widget == equation_widget:
-                color = self.graph_canvas.plot_equation(m, b)  # ✅ Get line color
-                self.equations[i] = (equation_widget, m, b, color)  # ✅ Update equation entry
-                self.update_equation_label_color(equation_widget, color)  # ✅ Update label color
+                self.equations[i] = (equation_widget, m, b, color, visible)
+                self.update_equation_label_color(equation_widget, color)
                 self.update_graph()
                 return
 
-        # ✅ New equation
         color = self.graph_canvas.plot_equation(m, b)
-        self.equations.append((equation_widget, m, b, color))
+        self.equations.append((equation_widget, m, b, color, True))
         self.update_equation_label_color(equation_widget, color)
 
     def on_settings_clicked(self):
@@ -222,15 +219,19 @@ class MainWindow(QMainWindow):
                 self.add_button.setDisabled(False)
 
     def on_redo_clicked(self):
-        # Redo (Restore last undone equation with the correct color) and update graph.
+        # Redo (Restore last undone equation, ensuring it is visible with correct icon).
         if self.undo_stack:
-            equation_widget, m, b, color = self.undo_stack.pop()
+            equation_widget, m, b, color, _ = self.undo_stack.pop()
             self.equation_boxes.append(equation_widget)
             self.left_layout.insertWidget(self.left_layout.count() - 2, equation_widget)
 
-            self.equations.append((equation_widget, m, b, color))
+            self.equations.append((equation_widget, m, b, color, True))
 
             self.graph_canvas.plot_equation(m, b, color)
+
+            eye_button = equation_widget.findChild(QToolButton)
+            if eye_button:
+                eye_button.setIcon(QIcon(os.path.join(ICON_PATH, "grey_open_eye.png")))
 
             self.update_equation_label_color(equation_widget, color)
 
@@ -252,21 +253,34 @@ class MainWindow(QMainWindow):
                 number_label.setText(str(index))  # Update the number
 
     def update_equation_label_color(self, equation_widget, color):
-        """Updates the color of the number label next to an equation."""
+        # Updates the color of the number label next to an equation.
         number_label = equation_widget.findChild(QLabel)
         if number_label:
             number_label.setStyleSheet(f"color: {color}; font-weight: bold; font-family: Helvetica;")
 
     def update_graph(self):
-        # Redraws all equations currently in the list.
+        # Redraws all equations currently visible in the list.
         self.graph_canvas.ax.clear()
         self.graph_canvas.plot_default_graph()  # Reset Grid
 
-        for _, m, b, color in self.equations:
-            self.graph_canvas.plot_equation(m, b, color)
+        for _, m, b, color, visible in self.equations:
+            if visible:
+                self.graph_canvas.plot_equation(m, b, color)
 
         self.graph_canvas.draw()
 
+    def toggle_visibility(self, equation_widget, eye_button):
+        # Toggles the visibility of the equation on the graph.
+        for i, (widget, m, b, color, visible) in enumerate(self.equations):
+            if widget == equation_widget:
+                new_visibility = not visible
+                self.equations[i] = (widget, m, b, color, new_visibility)
+
+                icon_path = "grey_open_eye.png" if new_visibility else "grey_closed_eye.png"
+                eye_button.setIcon(QIcon(os.path.join(ICON_PATH, icon_path)))
+
+                self.update_graph()
+                return
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
