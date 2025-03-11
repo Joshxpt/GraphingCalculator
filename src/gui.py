@@ -2,13 +2,13 @@ import sys
 import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QFrame,
                              QHBoxLayout, QVBoxLayout, QLabel, QSizePolicy, QToolButton,
-                             QLineEdit, QPushButton, QMessageBox)
+                             QLineEdit, QPushButton, QMessageBox, QStackedWidget)
 from PyQt5.QtGui import QFont, QFontDatabase, QIcon
 from PyQt5.QtCore import Qt, QSize
 
 from graphing import GraphCanvas
 from calculations import parse_linear_equation
-
+from settings import SettingsPanel
 
 
 # Define constants for paths
@@ -35,27 +35,16 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # Add Font of Application
-        font_id = QFontDatabase.addApplicationFont(FONT_PATH)
-        if font_id < 0:
-            print("Error adding font")
-            app_font = QFont("Arial", 30)  # Fallback font
-        else:
-            families = QFontDatabase.applicationFontFamilies(font_id)
-            app_font = QFont(families[0], 30) if families else QFont("Arial", 30)
-
-        # --- MENU SECTION ---
-        left_section = QWidget()
-        left_section.setStyleSheet("background-color: #f3f3f3;")
-
-        self.left_layout = QVBoxLayout(left_section)
+        # --- MENU SECTION (Equation Entry Panel) ---
+        self.equation_panel = QWidget()
+        self.equation_panel.setStyleSheet("background-color: #f3f3f3;")
+        self.left_layout = QVBoxLayout(self.equation_panel)
         self.left_layout.setContentsMargins(0, 10, 0, 0)
         self.left_layout.setSpacing(15)
 
         # Title
         title_label = QLabel("Graphing Calculator", self)
-        title_label.setStyleSheet("color: #595959;")
-        title_label.setFont(app_font)
+        title_label.setStyleSheet("color: #595959; font-weight: bold; font-size: 32px; font-family: Righteous")
 
         # Menu Bar
         toolbar = self.setup_toolbar()
@@ -72,6 +61,15 @@ class MainWindow(QMainWindow):
         self.left_layout.addStretch(1)
         self.add_equation_box()
 
+        # --- SETTINGS PANEL ---
+        self.settings_panel = SettingsPanel(self)
+        self.settings_panel.setStyleSheet("background-color: #f3f3f3;")
+
+        # --- LEFT SECTION (STACKED WIDGET) ---
+        self.left_section = QStackedWidget()  # Allows switching between panels
+        self.left_section.addWidget(self.equation_panel)  # Index 0 → Equation Panel
+        self.left_section.addWidget(self.settings_panel)  # Index 1 → Settings Panel
+
         # --- GRAPH SECTION ---
         self.graph_section = QWidget()
         self.graph_layout = QVBoxLayout(self.graph_section)
@@ -85,12 +83,8 @@ class MainWindow(QMainWindow):
         self.graph_section.setLayout(self.graph_layout)
 
         # Adding sections to window
-        main_layout.addWidget(left_section, 1)
-        main_layout.addWidget(self.graph_section, 5)
-
-        # Adding sections to window
-        main_layout.addWidget(left_section, 1)
-        main_layout.addWidget(self.graph_section, 3)
+        main_layout.addWidget(self.left_section, 1)  # Left Side (Switchable)
+        main_layout.addWidget(self.graph_section, 5)  # Right Side (Graph)
 
     def setup_toolbar(self):
         # Creates the toolbar with buttons
@@ -194,7 +188,10 @@ class MainWindow(QMainWindow):
         self.update_equation_label_color(equation_widget, color)
 
     def on_settings_clicked(self):
-        print("Settings button clicked!")
+        if self.left_section.currentIndex() == 0:
+            self.left_section.setCurrentIndex(1)  # Show Settings Panel
+        else:
+            self.left_section.setCurrentIndex(0)  # Show Equation Panel
 
     def on_maths_clicked(self):
         print("Maths button clicked!")

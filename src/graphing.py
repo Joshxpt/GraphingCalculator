@@ -51,7 +51,7 @@ class GraphCanvas(FigureCanvas):
             color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
         self.ax.plot(x, y, label=f"y = {m}x + {b}", color=color)
-        self.ax.legend(loc="upper left", fontsize=8)
+        # self.ax.legend(loc="upper left", fontsize=8)
         self.draw()
 
         return color
