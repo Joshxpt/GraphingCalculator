@@ -1,8 +1,11 @@
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QFrame,
+import os
+from PyQt5.QtWidgets import (QWidget, QFrame,
                              QHBoxLayout, QVBoxLayout, QLabel, QSizePolicy, QToolButton,
-                             QLineEdit, QPushButton, QMessageBox, QStackedWidget)
-from PyQt5.QtGui import QFont, QFontDatabase, QIcon
+                             QLineEdit, QMessageBox)
+from PyQt5.QtGui import QFont, QIcon, QDoubleValidator
 from PyQt5.QtCore import Qt, QSize
+
+ICON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "assets", "icons"))
 
 
 class SettingsPanel(QWidget):
@@ -35,9 +38,31 @@ class SettingsPanel(QWidget):
         backbar = self.setup_backbar()
         container_layout.addWidget(backbar, 0)
 
+        # Settings Title
+        settings_text = QLabel("SETTINGS", self)
+        settings_text.setStyleSheet("color: #595959; font-weight: bold; font-size: 20px; font-family: Calibri")
+        container_layout.addWidget(settings_text, 0, Qt.AlignCenter)
+
+        # Gridline Toggle
+        gridlines_widget = self.gridlines()
+        container_layout.addWidget(gridlines_widget, 0, Qt.AlignCenter)
+
+        # Axis Numbers Toggle
+        axis_numbers_widget = self.axis_numbers()
+        container_layout.addWidget(axis_numbers_widget, 0, Qt.AlignCenter)
+
+        # Update X-Axis
+        x_axis_widget = self.update_x_axis()
+        container_layout.addWidget(x_axis_widget, 0, Qt.AlignCenter)
+
+        # Update Y-Axis
+        y_axis_widget = self.update_y_axis()
+        container_layout.addWidget(y_axis_widget, 0, Qt.AlignCenter)
+
         container_layout.addStretch(1)
 
         self.left_layout.addWidget(container)
+
 
     def setup_backbar(self):
 
@@ -64,3 +89,186 @@ class SettingsPanel(QWidget):
     def go_back_to_equations(self, event):
         # Switches back to the main equation panel.
         self.main_window.left_section.setCurrentIndex(0)
+
+    def gridlines(self):
+
+        gridlines_widget = QWidget()
+        gridlines_layout = QHBoxLayout(gridlines_widget)
+        gridlines_layout.setContentsMargins(0, 0, 0, 0)
+        gridlines_layout.setSpacing(5)
+
+        # Eye button (store reference for toggling)
+        self.grid_eye_button = QToolButton()
+        self.grid_eye_button.setIcon(QIcon(os.path.join(ICON_PATH, "grey_open_eye.png")))
+        self.grid_eye_button.setIconSize(QSize(20, 20))
+        self.grid_eye_button.setStyleSheet("border: none;")
+        self.grid_eye_button.clicked.connect(self.toggle_grid)
+
+        # Text
+        gridline_text = QLabel("Show/Hide Grid", self)
+        gridline_text.setFont(QFont("Calibri", 14))
+        gridline_text.setStyleSheet("color: #595959;")
+
+        gridlines_layout.addWidget(self.grid_eye_button)
+        gridlines_layout.addWidget(gridline_text)
+
+        return gridlines_widget
+
+    def toggle_grid(self):
+        # Toggles grid visibility and updates icon.
+        self.main_window.graph_canvas.toggle_grid()
+
+        if self.main_window.graph_canvas.grid_enabled:
+            self.grid_eye_button.setIcon(QIcon(os.path.join(ICON_PATH, "grey_open_eye.png")))
+        else:
+            self.grid_eye_button.setIcon(QIcon(os.path.join(ICON_PATH, "grey_closed_eye.png")))
+
+    def axis_numbers(self):
+
+        axis_numbers_widget = QWidget()
+        axis_numbers_layout = QHBoxLayout(axis_numbers_widget)
+        axis_numbers_layout.setContentsMargins(0, 0, 0, 0)
+        axis_numbers_layout.setSpacing(5)
+
+        # Eye button (store reference for toggling)
+        self.axis_eye_button = QToolButton()
+        self.axis_eye_button.setIcon(QIcon(os.path.join(ICON_PATH, "grey_open_eye.png")))
+        self.axis_eye_button.setIconSize(QSize(20, 20))
+        self.axis_eye_button.setStyleSheet("border: none;")
+        self.axis_eye_button.clicked.connect(self.toggle_axis_numbers)
+
+        # Text
+        axis_numbers_text = QLabel("Show/Hide Axis Numbers", self)
+        axis_numbers_text.setFont(QFont("Calibri", 14))
+        axis_numbers_text.setStyleSheet("color: #595959;")
+
+        axis_numbers_layout.addWidget(self.axis_eye_button)
+        axis_numbers_layout.addWidget(axis_numbers_text)
+
+        return axis_numbers_widget
+
+    def toggle_axis_numbers(self):
+        # Toggles axis numbers and updates icon.
+        self.main_window.graph_canvas.toggle_axis_numbers()
+
+        if self.main_window.graph_canvas.axis_numbers_enabled:
+            self.axis_eye_button.setIcon(QIcon(os.path.join(ICON_PATH, "grey_open_eye.png")))
+        else:
+            self.axis_eye_button.setIcon(QIcon(os.path.join(ICON_PATH, "grey_closed_eye.png")))
+
+    def update_x_axis(self):
+        # Creates X-Axis range input fields and applies changes to the graph when modified.
+        x_axis_widget = QWidget()
+        x_axis_layout = QHBoxLayout(x_axis_widget)
+        x_axis_layout.setContentsMargins(0, 0, 0, 0)
+        x_axis_layout.setSpacing(5)
+
+        validator = QDoubleValidator()
+
+        # X Min Input
+        self.x_min_input = QLineEdit()
+        self.x_min_input.setPlaceholderText("-10")
+        self.x_min_input.setFont(QFont("Calibri", 14))
+        self.x_min_input.setStyleSheet("color: #595959; background-color: white; border: 1px solid #ccc; padding: 5px;")
+        self.x_min_input.setFixedWidth(50)
+        self.x_min_input.setValidator(validator)
+        self.x_min_input.returnPressed.connect(self.apply_x_axis_range)
+
+        # Range Label
+        x_range_text = QLabel("≤    x    ≤", self)
+        x_range_text.setFont(QFont("Calibri", 14))
+        x_range_text.setStyleSheet("color: #595959;")
+
+        # X Max Input
+        self.x_max_input = QLineEdit()
+        self.x_max_input.setPlaceholderText("10")
+        self.x_max_input.setFont(QFont("Calibri", 14))
+        self.x_max_input.setStyleSheet("color: #595959; background-color: white; border: 1px solid #ccc; padding: 5px;")
+        self.x_max_input.setFixedWidth(50)
+        self.x_max_input.setValidator(validator)
+        self.x_max_input.returnPressed.connect(self.apply_x_axis_range)
+
+        x_axis_layout.addWidget(self.x_min_input)
+        x_axis_layout.addWidget(x_range_text)
+        x_axis_layout.addWidget(self.x_max_input)
+
+        return x_axis_widget
+
+    def apply_x_axis_range(self):
+        # Applies user-defined X-axis range to the graph.
+        min_value = self.x_min_input.text().strip()
+        max_value = self.x_max_input.text().strip()
+
+        try:
+            min_value = float(min_value) if min_value else -10
+            max_value = float(max_value) if max_value else 10
+
+            if min_value >= max_value:
+                QMessageBox.warning(self, "Invalid Range", "Minimum X must be less than Maximum X.")
+                return
+
+            self.main_window.graph_canvas.update_x_axis(min_value, max_value)  # ✅ Fixed
+
+        except ValueError:
+            QMessageBox.warning(self, "Invalid Input", "Please enter valid numbers for the X-axis range.")
+
+    def update_y_axis(self):
+        # Creates Y-Axis range input fields and applies changes to the graph when modified.
+        y_axis_widget = QWidget()
+        y_axis_layout = QHBoxLayout(y_axis_widget)
+        y_axis_layout.setContentsMargins(0, 0, 0, 0)
+        y_axis_layout.setSpacing(5)
+
+        validator = QDoubleValidator()
+
+        # Y Min Input
+        self.y_min_input = QLineEdit()
+        self.y_min_input.setPlaceholderText("-10")
+        self.y_min_input.setFont(QFont("Calibri", 14))
+        self.y_min_input.setStyleSheet("color: #595959; background-color: white; border: 1px solid #ccc; padding: 5px;")
+        self.y_min_input.setFixedWidth(50)
+        self.y_min_input.setValidator(validator)
+        self.y_min_input.returnPressed.connect(self.apply_y_axis_range)
+
+        # Range Label
+        y_range_text = QLabel("≤    y    ≤", self)
+        y_range_text.setFont(QFont("Calibri", 14))
+        y_range_text.setStyleSheet("color: #595959;")
+
+        # Y Max Input
+        self.y_max_input = QLineEdit()
+        self.y_max_input.setPlaceholderText("10")
+        self.y_max_input.setFont(QFont("Calibri", 14))
+        self.y_max_input.setStyleSheet("color: #595959; background-color: white; border: 1px solid #ccc; padding: 5px;")
+        self.y_max_input.setFixedWidth(50)
+        self.y_max_input.setValidator(validator)
+        self.y_max_input.returnPressed.connect(self.apply_y_axis_range)
+
+        y_axis_layout.addWidget(self.y_min_input)
+        y_axis_layout.addWidget(y_range_text)
+        y_axis_layout.addWidget(self.y_max_input)
+
+        return y_axis_widget
+
+    def apply_y_axis_range(self):
+        # Applies user-defined Y-axis range to the graph.
+        min_value = self.y_min_input.text().strip()
+        max_value = self.y_max_input.text().strip()
+
+        try:
+            min_value = float(min_value) if min_value else -10
+            max_value = float(max_value) if max_value else 10
+
+            if min_value >= max_value:
+                QMessageBox.warning(self, "Invalid Range", "Minimum Y must be less than Maximum Y.")  # ✅ Fixed
+                return
+
+            self.main_window.graph_canvas.update_y_axis(min_value, max_value)  # ✅ Fixed
+
+        except ValueError:
+            QMessageBox.warning(self, "Invalid Input", "Please enter valid numbers for the Y-axis range.")
+
+
+
+
+

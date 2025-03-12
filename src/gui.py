@@ -63,7 +63,6 @@ class MainWindow(QMainWindow):
 
         # --- SETTINGS PANEL ---
         self.settings_panel = SettingsPanel(self)
-        self.settings_panel.setStyleSheet("background-color: #f3f3f3;")
 
         # --- LEFT SECTION (STACKED WIDGET) ---
         self.left_section = QStackedWidget()  # Allows switching between panels
@@ -139,7 +138,7 @@ class MainWindow(QMainWindow):
         number_label.setAlignment(Qt.AlignCenter)
         number_label.setStyleSheet("color: #595959; font-weight: bold; font-family: Helvetica;")
 
-        # Eye button (for toggling visibility in future)
+        # Eye button
         eye_button = QToolButton()
         eye_button.setIcon(QIcon(os.path.join(ICON_PATH, "grey_open_eye.png")))
         eye_button.setIconSize(QSize(20, 20))
