@@ -101,12 +101,26 @@ class Pick_Equation_Panel(QWidget):
             placeholder.setStyleSheet("color: #595959; font-size: 16px;")
             self.equation_layout.addWidget(placeholder)
         else:
+            self.equation_group.setExclusive(False)
+
+            radio_buttons = []
+
             for equation in equations:
                 radio_button = QRadioButton(equation)
                 radio_button.setStyleSheet("font-size: 16px; color: #595959;")
+                radio_button.setChecked(False)
                 radio_button.clicked.connect(lambda checked, eq=equation: self.execute_operation(eq))
                 self.equation_group.addButton(radio_button)
                 self.equation_layout.addWidget(radio_button)
+                radio_buttons.append(radio_button)
+
+            for button in radio_buttons:
+                button.setAutoExclusive(False)
+                button.setChecked(False)
+                button.setAutoExclusive(True)
+            self.equation_group.setExclusive(True)
+
+            self.setFocus()
 
     def execute_operation(self, equation):
         # Executes the stored operation from Maths Panel on the selected equation."""

@@ -55,23 +55,23 @@ class GraphCanvas(FigureCanvas):
 
         self.draw()
 
-    def plot_equation(self, m, b, color=None):
+    def plot_equation(self, m, b, indep_var, color=None):
         # Plots a linear equation y = mx + b with a specified color.
-        x = np.linspace(self.x_min, self.x_max, 400)
-        y = m * x + b
+        x_values = np.linspace(float(self.x_min), float(self.x_max), 400)
+        y_values = m * x_values + b
 
         if color is None:
             import random
             color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
-        self.ax.plot(x, y, color=color)
+        self.ax.plot(x_values, y_values, color=color)
 
-        for i, (_, m_old, b_old, _) in enumerate(self.equations):
-            if m_old == m and b_old == b:
-                self.equations[i] = (None, m, b, color)
+        for i, (_, m_old, b_old, _, var_old) in enumerate(self.equations):
+            if m_old == m and b_old == b and var_old == indep_var:
+                self.equations[i] = (None, m, b, color, indep_var)
                 break
         else:
-            self.equations.append((None, m, b, color))
+            self.equations.append((None, m, b, color, indep_var))
 
         self.draw()
         return color
@@ -99,13 +99,17 @@ class GraphCanvas(FigureCanvas):
         self.refresh_graph()
 
     def refresh_graph(self):
-            # Redraws the graph while preserving plotted equations.
-            self.ax.clear()
-            self.plot_default_graph()
+        self.ax.clear()
+        self.plot_default_graph()
 
-            for _, m, b, color in self.equations:
-                x_values = np.linspace(self.x_min, self.x_max, 400)
-                y_values = m * x_values + b
-                self.ax.plot(x_values, y_values, color=color)
+        for equation in self.equations:
+            if len(equation) == 6:
+                _, m, b, color, visible, indep_var = equation
+            else:
+                _, m, b, color, visible = equation
+                indep_var = 'x'
 
-            self.draw()
+            if visible:
+                self.plot_equation(m, b, indep_var, color)
+
+        self.draw()

@@ -259,10 +259,10 @@ class SettingsPanel(QWidget):
             max_value = float(max_value) if max_value else 10
 
             if min_value >= max_value:
-                QMessageBox.warning(self, "Invalid Range", "Minimum Y must be less than Maximum Y.")  # ✅ Fixed
+                QMessageBox.warning(self, "Invalid Range", "Minimum Y must be less than Maximum Y.")
                 return
 
-            self.main_window.graph_canvas.update_y_axis(min_value, max_value)  # ✅ Fixed
+            self.main_window.graph_canvas.update_y_axis(min_value, max_value)
 
         except ValueError:
             QMessageBox.warning(self, "Invalid Input", "Please enter valid numbers for the Y-axis range.")

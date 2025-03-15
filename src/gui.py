@@ -183,17 +183,18 @@ class MainWindow(QMainWindow):
         if parsed_equation is None:
             QMessageBox.warning(self, "Invalid Equation", "Please enter a valid linear equation (e.g., 'y = 2x + 1').")
             return
-        m, b = parsed_equation
 
-        for i, (widget, _, _, color, visible) in enumerate(self.equations):
+        m, b, dep_var, indep_var = parsed_equation
+
+        for i, (widget, _, _, color, visible, _) in enumerate(self.equations):
             if widget == equation_widget:
-                self.equations[i] = (equation_widget, m, b, color, visible)
+                self.equations[i] = (equation_widget, m, b, color, visible, indep_var)
                 self.update_equation_label_color(equation_widget, color)
                 self.update_graph()
                 return
 
-        color = self.graph_canvas.plot_equation(m, b)
-        self.equations.append((equation_widget, m, b, color, True))
+        color = self.graph_canvas.plot_equation(m, b, indep_var)
+        self.equations.append((equation_widget, m, b, color, True, indep_var))
         self.update_equation_label_color(equation_widget, color)
 
     def on_settings_clicked(self):
@@ -230,13 +231,13 @@ class MainWindow(QMainWindow):
     def on_redo_clicked(self):
         # Redo (Restore last undone equation, ensuring it is visible with correct icon).
         if self.undo_stack:
-            equation_widget, m, b, color, _ = self.undo_stack.pop()
+            equation_widget, m, b, color, visible, indep_var = self.undo_stack.pop()
             self.equation_boxes.append(equation_widget)
             self.left_layout.insertWidget(self.left_layout.count() - 2, equation_widget)
 
-            self.equations.append((equation_widget, m, b, color, True))
+            self.equations.append((equation_widget, m, b, color, True, indep_var))
 
-            self.graph_canvas.plot_equation(m, b, color)
+            self.graph_canvas.plot_equation(m, b, indep_var, color)
 
             eye_button = equation_widget.findChild(QToolButton)
             if eye_button:
@@ -272,19 +273,18 @@ class MainWindow(QMainWindow):
         self.graph_canvas.ax.clear()
         self.graph_canvas.plot_default_graph()  # Reset Grid
 
-        for _, m, b, color, visible in self.equations:
+        for _, m, b, color, visible, indep_var in self.equations:
             if visible:
-                self.graph_canvas.plot_equation(m, b, color)
+                self.graph_canvas.plot_equation(m, b, indep_var, color)
 
         self.graph_canvas.draw()
 
     def toggle_visibility(self, equation_widget, eye_button):
         # Toggles the visibility of the equation on the graph.
-        for i, (widget, m, b, color, visible) in enumerate(self.equations):
+        for i, (widget, m, b, color, visible, indep_var) in enumerate(self.equations):
             if widget == equation_widget:
                 new_visibility = not visible
-                self.equations[i] = (widget, m, b, color, new_visibility)
-
+                self.equations[i] = (widget, m, b, color, new_visibility, indep_var)
                 icon_path = "grey_open_eye.png" if new_visibility else "grey_closed_eye.png"
                 eye_button.setIcon(QIcon(os.path.join(ICON_PATH, icon_path)))
 
@@ -292,12 +292,12 @@ class MainWindow(QMainWindow):
                 return
 
     def get_all_equations(self):
-        """Returns a list of all entered equations from the equation panel."""
+        # Returns a list of all entered equations from the equation panel.
         equations = []
 
         for eq_widget in self.equation_boxes:
-            equation_input = eq_widget.findChild(QLineEdit)  # ✅ Extract the input field
-            if equation_input:  # ✅ Ensure it's a valid QLineEdit
+            equation_input = eq_widget.findChild(QLineEdit)
+            if equation_input:
                 equations.append(equation_input.text())
 
         return equations

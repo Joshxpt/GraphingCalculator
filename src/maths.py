@@ -107,14 +107,17 @@ class MathsPanel(QWidget):
         parsed_equation = parse_linear_equation(equation_str)
 
         if parsed_equation:
-            m, b = parsed_equation
+            m, b, _, indep_var = parsed_equation  # ✅ Remove unused dependent variable
+
+            independent_symbol = sp.Symbol(indep_var)
+            sympy_equation = m * independent_symbol + b  # ✅ Only used for differentiation/integration
 
             if self.selected_operation == "Solve Equation":
-                result = solve_equation(m, b)
+                result = solve_equation(m, b, independent_symbol)
             elif self.selected_operation == "Differentiate":
-                result = differentiate(m, b)
+                result = sp.diff(sympy_equation, independent_symbol)
             elif self.selected_operation == "Integrate":
-                result = integrate(m, b)
+                result = sp.integrate(sympy_equation, independent_symbol)
             elif self.selected_operation == "Find Maximum":
                 result = find_maximum(m, b)
             elif self.selected_operation == "Find Minimum":
@@ -129,6 +132,10 @@ class MathsPanel(QWidget):
 
             self.show_result_dialog(formatted_result)
 
+            self.operations_group.setExclusive(False)
+            for button in self.operations_group.buttons():
+                button.setChecked(False)
+            self.operations_group.setExclusive(True)
         self.main_window.left_section.setCurrentIndex(2)
 
     def show_result_dialog(self, latex_expression):
