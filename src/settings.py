@@ -63,7 +63,6 @@ class SettingsPanel(QWidget):
 
         self.left_layout.addWidget(container)
 
-
     def setup_backbar(self):
 
         backbar = QFrame()

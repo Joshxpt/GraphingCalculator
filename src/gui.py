@@ -9,6 +9,8 @@ from PyQt5.QtCore import Qt, QSize
 from graphing import GraphCanvas
 from calculations import parse_linear_equation
 from settings import SettingsPanel
+from maths import MathsPanel
+from pick_equation import Pick_Equation_Panel
 
 
 # Define constants for paths
@@ -64,10 +66,18 @@ class MainWindow(QMainWindow):
         # --- SETTINGS PANEL ---
         self.settings_panel = SettingsPanel(self)
 
+        # --- MATHS PANEL ---
+        self.maths_panel = MathsPanel(self)
+
+        # --- PICK EQUATION PANEL ---
+        self.pick_equation_panel = Pick_Equation_Panel(self)
+
         # --- LEFT SECTION (STACKED WIDGET) ---
         self.left_section = QStackedWidget()  # Allows switching between panels
         self.left_section.addWidget(self.equation_panel)  # Index 0 → Equation Panel
         self.left_section.addWidget(self.settings_panel)  # Index 1 → Settings Panel
+        self.left_section.addWidget(self.maths_panel)  # Index 2 → Maths Panel
+        self.left_section.addWidget(self.pick_equation_panel)  # Index 3 → Choose Equation Panel
 
         # --- GRAPH SECTION ---
         self.graph_section = QWidget()
@@ -193,7 +203,10 @@ class MainWindow(QMainWindow):
             self.left_section.setCurrentIndex(0)  # Show Equation Panel
 
     def on_maths_clicked(self):
-        print("Maths button clicked!")
+        if self.left_section.currentIndex() != 2:
+            self.left_section.setCurrentIndex(2)
+        else:
+            self.left_section.setCurrentIndex(0)
 
     def on_undo_clicked(self):
         # Undo last added equation (Remove from UI and store for redo).
@@ -277,6 +290,18 @@ class MainWindow(QMainWindow):
 
                 self.update_graph()
                 return
+
+    def get_all_equations(self):
+        """Returns a list of all entered equations from the equation panel."""
+        equations = []
+
+        for eq_widget in self.equation_boxes:
+            equation_input = eq_widget.findChild(QLineEdit)  # ✅ Extract the input field
+            if equation_input:  # ✅ Ensure it's a valid QLineEdit
+                equations.append(equation_input.text())
+
+        return equations
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
