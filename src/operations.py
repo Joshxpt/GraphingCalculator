@@ -8,7 +8,11 @@ def convert_to_sympy(m, b, indep_var):
 
 def solve_equation(m, b, indep_var):
     # Solves a linear equation for x when y = 0 (finds the x-intercept).
-    independent_symbol = sp.Symbol(indep_var)
+    if isinstance(indep_var, sp.Symbol):
+        independent_symbol = indep_var  # Already a Symbol, use as is
+    else:
+        independent_symbol = sp.Symbol(indep_var)  # Convert only if it's a string
+
     equation = m * independent_symbol + b
     solution = sp.solve(equation, independent_symbol)
 

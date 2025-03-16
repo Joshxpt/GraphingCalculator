@@ -107,10 +107,10 @@ class MathsPanel(QWidget):
         parsed_equation = parse_linear_equation(equation_str)
 
         if parsed_equation:
-            m, b, _, indep_var = parsed_equation  # ✅ Remove unused dependent variable
+            m, b, _, indep_var = parsed_equation
 
             independent_symbol = sp.Symbol(indep_var)
-            sympy_equation = m * independent_symbol + b  # ✅ Only used for differentiation/integration
+            sympy_equation = m * independent_symbol + b
 
             if self.selected_operation == "Solve Equation":
                 result = solve_equation(m, b, independent_symbol)

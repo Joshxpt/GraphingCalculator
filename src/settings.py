@@ -114,7 +114,7 @@ class SettingsPanel(QWidget):
         return gridlines_widget
 
     def toggle_grid(self):
-        # Toggles grid visibility and updates icon.
+        """Toggles grid visibility and updates icon."""
         self.main_window.graph_canvas.toggle_grid()
 
         if self.main_window.graph_canvas.grid_enabled:
@@ -147,7 +147,7 @@ class SettingsPanel(QWidget):
         return axis_numbers_widget
 
     def toggle_axis_numbers(self):
-        # Toggles axis numbers and updates icon.
+        """Toggles axis numbers and updates icon."""
         self.main_window.graph_canvas.toggle_axis_numbers()
 
         if self.main_window.graph_canvas.axis_numbers_enabled:

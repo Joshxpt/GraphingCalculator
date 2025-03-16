@@ -3,35 +3,35 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 
+
 class GraphCanvas(FigureCanvas):
-    def __init__(self, parent=None):
+    def __init__(self, parent, main_window):
+       # Graphing canvas that dynamically fetches equations from the main window."""
+        if main_window is None:
+            raise ValueError("main_window reference is required")
+
         fig, self.ax = plt.subplots(figsize=(10, 8), dpi=100)
         fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
         super().__init__(fig)
         self.setParent(parent)
 
-        # Default X-Axis
-        self.x_min = -10.2
-        self.x_max = 10.2
+        self.main_window = main_window
 
-        #Default Y-Axis
-        self.y_min = -10.2
-        self.y_max = 10.2
-
+        self.x_min, self.x_max = -10, 10
+        self.y_min, self.y_max = -10, 10
         self.grid_enabled = True
         self.axis_numbers_enabled = True
-        self.equations = []  # Store equations
+
         self.plot_default_graph()
 
-
     def plot_default_graph(self):
-        # Plots a 4-quadrant grid.
+        # Plots the grid and axes while keeping existing equations intact.
         self.ax.clear()
         self.ax.set_xlim(self.x_min, self.x_max)
         self.ax.set_ylim(self.y_min, self.y_max)
 
-        self.ax.axhline(0, color='grey', linewidth=1)  # X-axis
-        self.ax.axvline(0, color='grey', linewidth=1)  # Y-axis
+        self.ax.axhline(0, color='grey', linewidth=1)
+        self.ax.axvline(0, color='grey', linewidth=1)
 
         for spine in self.ax.spines.values():
             spine.set_visible(False)
@@ -53,63 +53,46 @@ class GraphCanvas(FigureCanvas):
                 if y != 0:
                     self.ax.annotate(str(y), (-0.5, y), fontsize=7, ha='right', va='center', color='grey')
 
+        self.redraw_equations()
         self.draw()
 
     def plot_equation(self, m, b, indep_var, color=None):
         # Plots a linear equation y = mx + b with a specified color.
+        if color is None:
+            color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
+
         x_values = np.linspace(float(self.x_min), float(self.x_max), 400)
         y_values = m * x_values + b
 
-        if color is None:
-            import random
-            color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
-
-        self.ax.plot(x_values, y_values, color=color)
-
-        for i, (_, m_old, b_old, _, var_old) in enumerate(self.equations):
-            if m_old == m and b_old == b and var_old == indep_var:
-                self.equations[i] = (None, m, b, color, indep_var)
-                break
-        else:
-            self.equations.append((None, m, b, color, indep_var))
-
+        self.ax.plot(x_values, y_values, color=color, label=f'{indep_var}={m}x+{b}')
         self.draw()
         return color
 
     def toggle_grid(self):
-        # Toggles grid visibility.
+        # Toggles grid visibility while keeping equations intact.
         self.grid_enabled = not self.grid_enabled
-        self.refresh_graph()
-
-    def toggle_axis_numbers(self):
-        #  Toggles axis numbers
-        self.axis_numbers_enabled = not self.axis_numbers_enabled
-        self.refresh_graph()
-
-    def update_x_axis(self, min_x, max_x):
-        # Updates the X-axis range dynamically.
-        self.x_min = min_x
-        self.x_max = max_x
-        self.refresh_graph()
-
-    def update_y_axis(self, min_y, max_y):
-        # Updates the X-axis range dynamically.
-        self.y_min = min_y
-        self.y_max = max_y
-        self.refresh_graph()
-
-    def refresh_graph(self):
-        self.ax.clear()
         self.plot_default_graph()
 
-        for equation in self.equations:
-            if len(equation) == 6:
-                _, m, b, color, visible, indep_var = equation
-            else:
-                _, m, b, color, visible = equation
-                indep_var = 'x'
+    def toggle_axis_numbers(self):
+        # Toggles axis numbers visibility while keeping equations intact.
+        self.axis_numbers_enabled = not self.axis_numbers_enabled
+        self.plot_default_graph()
 
+    def update_x_axis(self, min_x, max_x):
+        # Updates the X-axis range dynamically while keeping equations.
+        self.x_min = min_x
+        self.x_max = max_x
+        self.plot_default_graph()
+
+    def update_y_axis(self, min_y, max_y):
+        # Updates the Y-axis range dynamically while keeping equations.
+        self.y_min = min_y
+        self.y_max = max_y
+        self.plot_default_graph()
+
+    def redraw_equations(self):
+        # Replots only the visible equations from MainWindow.
+        for equation_data in self.main_window.equations:
+            equation_widget, m, b, color, visible, indep_var = equation_data
             if visible:
                 self.plot_equation(m, b, indep_var, color)
-
-        self.draw()

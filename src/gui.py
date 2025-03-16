@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
         self.graph_layout.setContentsMargins(0, 0, 0, 0)
 
         # Create Graph Canvas
-        self.graph_canvas = GraphCanvas(self)
+        self.graph_canvas = GraphCanvas(self, main_window=self)
         self.graph_canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.graph_layout.addWidget(self.graph_canvas, 1)
 
