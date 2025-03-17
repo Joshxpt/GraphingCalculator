@@ -1,44 +1,80 @@
 import sympy as sp
 
-def convert_to_sympy(m, b, indep_var):
-    # Converts parsed linear equation into a SymPy expression.
+
+def convert_to_sympy(coefficients, equation_type, indep_var):
+
     independent_symbol = sp.Symbol(indep_var)
-    equation = m * independent_symbol + b
+
+    if equation_type == "linear":
+        m, b = coefficients
+        equation = m * independent_symbol + b
+    elif equation_type == "quadratic":
+        a, b, c = coefficients
+        equation = a * independent_symbol ** 2 + b * independent_symbol + c
+    else:
+        raise ValueError("Unsupported equation type")
+
     return equation
 
-def solve_equation(m, b, indep_var):
-    # Solves a linear equation for x when y = 0 (finds the x-intercept).
-    if isinstance(indep_var, sp.Symbol):
-        independent_symbol = indep_var  # Already a Symbol, use as is
+def solve_equation(equation_type, coefficients, indep_var):
+
+    if not isinstance(indep_var, str):
+        raise TypeError(f"Expected 'indep_var' to be a string, got {type(indep_var)}")
+
+    x = sp.Symbol(indep_var)
+    equation = convert_to_sympy(coefficients, equation_type, indep_var)
+
+    # Solve for x when y = 0 (x-intercepts)
+    x_intercepts = sp.solve(equation, x)
+
+    if not x_intercepts:
+        x_intercept_str = "No Real Solution"
     else:
-        independent_symbol = sp.Symbol(indep_var)  # Convert only if it's a string
+        # Format solutions as strings
+        x_intercept_str = ', '.join([str(val) for val in x_intercepts])
 
-    equation = m * independent_symbol + b
-    solution = sp.solve(equation, independent_symbol)
+    # Solve for y when x = 0 (y-intercept)
+    y_intercept = equation.subs(x, 0)
 
-    if not solution:
-        return sp.Symbol("No Solution")
+    # Return plain text format
+    return f"When y=0: {x_intercept_str}\nWhen x=0: {y_intercept}"
 
-    return solution[0] if len(solution) == 1 else solution
 
-def differentiate(m, b, indep_var):
-    # Finds the derivative of the given linear equation.
+def differentiate(equation_type, coefficients, indep_var):
+
     independent_symbol = sp.Symbol(indep_var)
-    equation = convert_to_sympy(m, b, indep_var)
-    derivative = sp.diff(equation, independent_symbol)
-    return derivative
+    equation = convert_to_sympy(coefficients, equation_type, indep_var)
 
-def integrate(m, b, indep_var):
-    # Finds the integral of the given linear equation.
+    return sp.diff(equation, independent_symbol)
+
+
+def integrate(equation_type, coefficients, indep_var):
+
     independent_symbol = sp.Symbol(indep_var)
-    equation = convert_to_sympy(m, b, indep_var)
-    integral = sp.integrate(equation, independent_symbol)
-    return integral
+    equation = convert_to_sympy(coefficients, equation_type, indep_var)
 
-def find_maximum(m, b):
-    # Finds the maximum of a function (Linear functions have no maximum).
-    return sp.Symbol("No Maximum")
+    return sp.integrate(equation, independent_symbol)
 
-def find_minimum(m, b):
-    # Finds the minimum of a function (Linear functions have no minimum).
-    return sp.Symbol("No Minimum")
+
+def find_maximum(equation_type, coefficients):
+
+    if equation_type == "quadratic":
+        a, b, c = coefficients
+        if a < 0:  # Downward-facing parabola has a maximum
+            x_vertex = -b / (2 * a)
+            y_vertex = a * (x_vertex ** 2) + b * x_vertex + c
+            return (x_vertex, y_vertex)
+        return sp.Symbol("No Maximum")
+    return sp.Symbol("No Maximum (Linear Functions Do Not Have One)")
+
+
+def find_minimum(equation_type, coefficients):
+
+    if equation_type == "quadratic":
+        a, b, c = coefficients
+        if a > 0:  # Upward-facing parabola has a minimum
+            x_vertex = -b / (2 * a)
+            y_vertex = a * (x_vertex ** 2) + b * x_vertex + c
+            return (x_vertex, y_vertex)
+        return sp.Symbol("No Minimum")
+    return sp.Symbol("No Minimum (Linear Functions Do Not Have One)")

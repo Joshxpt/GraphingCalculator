@@ -5,7 +5,6 @@ from PyQt5.QtWidgets import (QWidget, QFrame,
 from PyQt5.QtGui import QFont, QIcon, QDoubleValidator
 from PyQt5.QtCore import Qt, QSize
 
-from calculations import parse_linear_equation
 from operations import solve_equation, differentiate, integrate, find_maximum, find_minimum
 
 

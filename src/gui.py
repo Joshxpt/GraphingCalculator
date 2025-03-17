@@ -7,7 +7,7 @@ from PyQt5.QtGui import QFont, QFontDatabase, QIcon
 from PyQt5.QtCore import Qt, QSize
 
 from graphing import GraphCanvas
-from calculations import parse_linear_equation
+from calculations import parse_equation
 from settings import SettingsPanel
 from maths import MathsPanel
 from pick_equation import Pick_Equation_Panel
@@ -179,22 +179,22 @@ class MainWindow(QMainWindow):
         # Processes the input equation, updates tracking, and redraws the graph.
         equation_text = equation_input.text().strip()
 
-        parsed_equation = parse_linear_equation(equation_text)
+        parsed_equation = parse_equation(equation_text)  # Now supports quadratic equations
         if parsed_equation is None:
-            QMessageBox.warning(self, "Invalid Equation", "Please enter a valid linear equation (e.g., 'y = 2x + 1').")
+            QMessageBox.warning(self, "Invalid Equation", "Please enter a valid linear or quadratic equation.")
             return
 
-        m, b, dep_var, indep_var = parsed_equation
+        equation_type, coefficients, dep_var, indep_var = parsed_equation
 
         for i, (widget, _, _, color, visible, _) in enumerate(self.equations):
             if widget == equation_widget:
-                self.equations[i] = (equation_widget, m, b, color, visible, indep_var)
+                self.equations[i] = (equation_widget, equation_type, coefficients, color, visible, indep_var)
                 self.update_equation_label_color(equation_widget, color)
                 self.update_graph()
                 return
 
-        color = self.graph_canvas.plot_equation(m, b, indep_var)
-        self.equations.append((equation_widget, m, b, color, True, indep_var))
+        color = self.graph_canvas.plot_equation(equation_type, coefficients, indep_var)
+        self.equations.append((equation_widget, equation_type, coefficients, color, True, indep_var))
         self.update_equation_label_color(equation_widget, color)
 
     def on_settings_clicked(self):
@@ -273,18 +273,18 @@ class MainWindow(QMainWindow):
         self.graph_canvas.ax.clear()
         self.graph_canvas.plot_default_graph()  # Reset Grid
 
-        for _, m, b, color, visible, indep_var in self.equations:
+        for _, equation_type, coefficients, color, visible, indep_var in self.equations:
             if visible:
-                self.graph_canvas.plot_equation(m, b, indep_var, color)
+                self.graph_canvas.plot_equation(equation_type, coefficients, indep_var, color)
 
         self.graph_canvas.draw()
 
     def toggle_visibility(self, equation_widget, eye_button):
         # Toggles the visibility of the equation on the graph.
-        for i, (widget, m, b, color, visible, indep_var) in enumerate(self.equations):
+        for i, (widget, equation_type, coefficients, color, visible, indep_var) in enumerate(self.equations):
             if widget == equation_widget:
                 new_visibility = not visible
-                self.equations[i] = (widget, m, b, color, new_visibility, indep_var)
+                self.equations[i] = (widget, equation_type, coefficients, color, new_visibility, indep_var)
                 icon_path = "grey_open_eye.png" if new_visibility else "grey_closed_eye.png"
                 eye_button.setIcon(QIcon(os.path.join(ICON_PATH, icon_path)))
 

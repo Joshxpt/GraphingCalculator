@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 import tempfile
 import os
 from pick_equation import Pick_Equation_Panel
-from calculations import parse_linear_equation
-from operations import solve_equation, differentiate, integrate, find_maximum, find_minimum
+from calculations import parse_equation
+from operations import solve_equation, differentiate, integrate, find_maximum, find_minimum, convert_to_sympy
 import sympy as sp
 
 class MathsPanel(QWidget):
@@ -16,7 +16,7 @@ class MathsPanel(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
-        self.selected_operation = None  # ✅ Stores selected operation
+        self.selected_operation = None
         self.initUI()
 
     def initUI(self):
@@ -103,39 +103,48 @@ class MathsPanel(QWidget):
         self.main_window.left_section.setCurrentIndex(3)
 
     def perform_operation(self, equation_str):
-        # Runs the stored operation on the selected equation and returns to Maths Panel.
-        parsed_equation = parse_linear_equation(equation_str)
+        parsed_equation = parse_equation(equation_str)
 
         if parsed_equation:
-            m, b, _, indep_var = parsed_equation
+            equation_type, coefficients, _, indep_var = parsed_equation
 
             independent_symbol = sp.Symbol(indep_var)
-            sympy_equation = m * independent_symbol + b
+            sympy_equation = convert_to_sympy(coefficients, equation_type, indep_var)
 
             if self.selected_operation == "Solve Equation":
-                result = solve_equation(m, b, independent_symbol)
-            elif self.selected_operation == "Differentiate":
-                result = sp.diff(sympy_equation, independent_symbol)
-            elif self.selected_operation == "Integrate":
-                result = sp.integrate(sympy_equation, independent_symbol)
-            elif self.selected_operation == "Find Maximum":
-                result = find_maximum(m, b)
-            elif self.selected_operation == "Find Minimum":
-                result = find_minimum(m, b)
+                result = solve_equation(equation_type, coefficients, indep_var)
+                self.show_plain_text_result_dialog(result)
             else:
-                result = "Operation not implemented yet"
+                # Handle other operations that use LaTeX display
+                if self.selected_operation == "Differentiate":
+                    result = sp.diff(sympy_equation, independent_symbol)
+                elif self.selected_operation == "Integrate":
+                    result = sp.integrate(sympy_equation, independent_symbol)
+                elif self.selected_operation == "Find Maximum":
+                    result = find_maximum(equation_type, coefficients)
+                elif self.selected_operation == "Find Minimum":
+                    result = find_minimum(equation_type, coefficients)
+                else:
+                    result = "Operation not implemented yet"
 
-            result = result.rewrite(sp.Rational)
-            result = sp.nsimplify(result, rational=True)
+                if isinstance(result, sp.Basic):
+                    result = result.rewrite(sp.Rational)
+                    result = sp.nsimplify(result, rational=True)
 
-            formatted_result = sp.latex(result)
+                # Convert tuples to readable format
+                if isinstance(result, tuple):
+                    formatted_result = f"({result[0]}, {result[1]})"
+                else:
+                    formatted_result = sp.latex(result)
 
-            self.show_result_dialog(formatted_result)
+                self.show_result_dialog(formatted_result)
 
+            # Reset operation buttons regardless of which operation was performed
             self.operations_group.setExclusive(False)
             for button in self.operations_group.buttons():
                 button.setChecked(False)
             self.operations_group.setExclusive(True)
+
         self.main_window.left_section.setCurrentIndex(2)
 
     def show_result_dialog(self, latex_expression):
@@ -156,6 +165,30 @@ class MathsPanel(QWidget):
 
         result_label = QLabel()
         result_label.setPixmap(QPixmap(img_path))
+        layout.addWidget(result_label)
+
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(dialog.accept)
+        layout.addWidget(close_button)
+
+        dialog.setLayout(layout)
+        dialog.exec_()
+
+    def show_plain_text_result_dialog(self, result_text):
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle(self.selected_operation)
+        layout = QVBoxLayout()
+
+        result_label = QLabel(result_text)
+        result_label.setStyleSheet("""
+            font-size: 14pt;
+            font-family: 'Arial';
+            padding: 20px;
+            color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        """)
         layout.addWidget(result_label)
 
         close_button = QPushButton("Close")

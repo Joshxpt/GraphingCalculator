@@ -56,15 +56,27 @@ class GraphCanvas(FigureCanvas):
         self.redraw_equations()
         self.draw()
 
-    def plot_equation(self, m, b, indep_var, color=None):
-        # Plots a linear equation y = mx + b with a specified color.
+    def plot_equation(self, equation_type, coefficients, indep_var, color=None):
+        # Plots a linear or quadratic equation with a specified color.
         if color is None:
             color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
         x_values = np.linspace(float(self.x_min), float(self.x_max), 400)
-        y_values = m * x_values + b
 
-        self.ax.plot(x_values, y_values, color=color, label=f'{indep_var}={m}x+{b}')
+        if equation_type == "linear":
+            m, b = coefficients
+            y_values = m * x_values + b
+            equation_label = f"{indep_var} = {m}x + {b}"
+
+        elif equation_type == "quadratic":
+            a, b, c = coefficients
+            y_values = a * (x_values ** 2) + b * x_values + c
+            equation_label = f"{indep_var} = {a}x² + {b}x + {c}"
+
+        else:
+            raise ValueError("Unsupported equation type")
+
+        self.ax.plot(x_values, y_values, color=color, label=equation_label)
         self.draw()
         return color
 
@@ -93,6 +105,6 @@ class GraphCanvas(FigureCanvas):
     def redraw_equations(self):
         # Replots only the visible equations from MainWindow.
         for equation_data in self.main_window.equations:
-            equation_widget, m, b, color, visible, indep_var = equation_data
+            equation_widget, equation_type, coefficients, color, visible, indep_var = equation_data
             if visible:
-                self.plot_equation(m, b, indep_var, color)
+                self.plot_equation(equation_type, coefficients, indep_var, color)
