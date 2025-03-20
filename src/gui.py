@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QFrame,
                              QHBoxLayout, QVBoxLayout, QLabel, QSizePolicy, QToolButton,
                              QLineEdit, QPushButton, QMessageBox, QStackedWidget)
@@ -54,7 +55,7 @@ class MainWindow(QMainWindow):
         # Add New Equation Button (+)
         self.add_button = QPushButton("+")
         self.add_button.setFixedSize(40, 40)
-        self.add_button.setStyleSheet("border-radius: 20px; background-color: #d9d9d9; font-size: 20px;")
+        self.add_button.setStyleSheet("border-radius: 20px; background-color: #f3f3f3; font-size: 20px;")
         self.add_button.clicked.connect(self.add_equation_box)
 
         self.left_layout.addWidget(title_label, 0)
@@ -84,11 +85,63 @@ class MainWindow(QMainWindow):
         self.graph_layout = QVBoxLayout(self.graph_section)
         self.graph_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Create Graph Canvas
+        self.graph_container = QWidget(self.graph_section)
+        self.graph_container_layout = QVBoxLayout(self.graph_container)
+        self.graph_container_layout.setContentsMargins(0, 0, 0, 0)
+
         self.graph_canvas = GraphCanvas(self, main_window=self)
         self.graph_canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.graph_layout.addWidget(self.graph_canvas, 1)
+        self.graph_container_layout.addWidget(self.graph_canvas, 1)
 
+        # --- ZOOM PANEL (Overlay) ---
+        self.zoom_panel = QWidget(self.graph_container)
+        self.zoom_panel.setFixedSize(100, 25)
+        self.zoom_panel.setStyleSheet("background-color: #d9d9d9; border-radius: 10px; opacity: 0.8;")
+
+        # Create layout for zoom controls
+        zoom_layout = QHBoxLayout(self.zoom_panel)
+        zoom_layout.setContentsMargins(5, 5, 5, 5)
+        zoom_layout.setSpacing(8)
+
+        # Create 100% Zoom Text Button
+        self.zoom_label = QLabel("100%", self.zoom_panel)
+        self.zoom_label.setStyleSheet("font-size: 12px; font-family: Calibri; color: #818181;")
+        zoom_layout.addWidget(self.zoom_label, 1)
+
+        # Create Zoom In Button (+)
+        self.zoom_in_button = QToolButton(self.zoom_panel)
+        self.zoom_in_button.setIcon(QIcon(os.path.join(ICON_PATH, "grey_plus.png")))
+        self.zoom_in_button.setIconSize(QSize(14, 14))
+        self.zoom_in_button.setStyleSheet("border: none;")
+        zoom_layout.addWidget(self.zoom_in_button, 1)
+
+        # Create Zoom Out Button (-)
+        self.zoom_out_button = QToolButton(self.zoom_panel)
+        self.zoom_out_button.setIcon(QIcon(os.path.join(ICON_PATH, "grey_minus.png")))
+        self.zoom_out_button.setIconSize(QSize(14, 14))
+        self.zoom_out_button.setStyleSheet("border: none;")
+        zoom_layout.addWidget(self.zoom_out_button, 1)
+
+        self.zoom_panel.setLayout(zoom_layout)
+
+        # Position zoom panel in the bottom-right corner
+        self.zoom_panel.move(
+            self.graph_container.width() - self.zoom_panel.width(),
+            self.graph_container.height() - self.zoom_panel.height()
+        )
+
+        # Ensure zoom panel moves dynamically on resize
+        def update_zoom_panel_position(event):
+            self.zoom_panel.move(
+                max(self.graph_container.width() - self.zoom_panel.width(), 0),
+                max(self.graph_container.height() - self.zoom_panel.height(), 0)
+            )
+
+        self.graph_container.resizeEvent = update_zoom_panel_position
+
+        self.zoom_panel.raise_()
+
+        self.graph_layout.addWidget(self.graph_container, 1)
         self.graph_section.setLayout(self.graph_layout)
 
         # Adding sections to window
@@ -179,9 +232,17 @@ class MainWindow(QMainWindow):
         # Processes the input equation, updates tracking, and redraws the graph.
         equation_text = equation_input.text().strip()
 
-        parsed_equation = parse_equation(equation_text)  # Now supports quadratic equations
+        match = re.match(r"^([a-zA-Z])=", equation_text)
+
+        if not match:
+            equation_text = "y=" + equation_text
+
+        equation_input.setText(equation_text)
+
+        parsed_equation = parse_equation(equation_text)
         if parsed_equation is None:
-            QMessageBox.warning(self, "Invalid Equation", "Please enter a valid linear or quadratic equation.")
+            QMessageBox.warning(self, "Invalid Equation",
+                                "Please enter a valid linear or quadratic equation (e.g., 'y = 2x^2 + 3x + 5').")
             return
 
         equation_type, coefficients, dep_var, indep_var = parsed_equation
