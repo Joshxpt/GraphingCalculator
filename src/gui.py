@@ -11,6 +11,7 @@ from graphing import GraphCanvas
 from calculations import parse_equation
 from settings import SettingsPanel
 from maths import MathsPanel
+import numpy as np
 from pick_equation import Pick_Equation_Panel
 
 
@@ -93,6 +94,11 @@ class MainWindow(QMainWindow):
         self.graph_canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.graph_container_layout.addWidget(self.graph_canvas, 1)
 
+        self.default_x_min = self.graph_canvas.x_min
+        self.default_x_max = self.graph_canvas.x_max
+        self.default_y_min = self.graph_canvas.y_min
+        self.default_y_max = self.graph_canvas.y_max
+
         # --- ZOOM PANEL (Overlay) ---
         self.zoom_panel = QWidget(self.graph_container)
         self.zoom_panel.setFixedSize(100, 25)
@@ -140,6 +146,14 @@ class MainWindow(QMainWindow):
         self.graph_container.resizeEvent = update_zoom_panel_position
 
         self.zoom_panel.raise_()
+
+        self.zoom_level = 0  # 0 = 100%
+        self.max_zoom = 5
+
+        # Connect zoom buttons to functions
+        self.zoom_in_button.clicked.connect(self.zoom_in)
+        self.zoom_out_button.clicked.connect(self.zoom_out)
+        self.zoom_label.mousePressEvent = self.reset_zoom
 
         self.graph_layout.addWidget(self.graph_container, 1)
         self.graph_section.setLayout(self.graph_layout)
@@ -362,6 +376,81 @@ class MainWindow(QMainWindow):
                 equations.append(equation_input.text())
 
         return equations
+
+    def zoom_in(self):
+        if self.zoom_level >= self.max_zoom:
+            return
+
+        self.zoom_level += 1
+        self.apply_zoom()
+
+    def zoom_out(self):
+        if self.zoom_level <= -self.max_zoom:
+            return
+
+        self.zoom_level -= 1
+        self.apply_zoom()
+
+    def reset_zoom(self, event=None):
+        self.zoom_level = 0
+        self.apply_zoom()
+
+    def apply_zoom(self):
+        x_center = (self.default_x_min + self.default_x_max) / 2
+        y_center = (self.default_y_min + self.default_y_max) / 2
+
+        x_half_range = (self.default_x_max - self.default_x_min) / 2
+        y_half_range = (self.default_y_max - self.default_y_min) / 2
+
+        zoom_factor = 2 ** (-self.zoom_level)
+
+        new_x_range = x_half_range * zoom_factor
+        new_y_range = y_half_range * zoom_factor
+
+        self.graph_canvas.update_x_axis(x_center - new_x_range, x_center + new_x_range)
+        self.graph_canvas.update_y_axis(y_center - new_y_range, y_center + new_y_range)
+
+        visible_x_range = self.graph_canvas.x_max - self.graph_canvas.x_min
+        visible_y_range = self.graph_canvas.y_max - self.graph_canvas.y_min
+
+        self.graph_canvas.x_step = self.get_nice_step(visible_x_range)
+        self.graph_canvas.y_step = self.get_nice_step(visible_y_range)
+
+        self.graph_canvas.plot_default_graph()
+
+        default_x_range = self.default_x_max - self.default_x_min
+        visible_x_range = self.graph_canvas.x_max - self.graph_canvas.x_min
+        zoom_ratio = default_x_range / visible_x_range
+        zoom_percent = int(zoom_ratio * 100)
+        self.zoom_label.setText(f"{zoom_percent}%")
+
+    def update_x_axis_zoom(self, min_x, max_x):
+        self.graph_canvas.update_x_axis(min_x, max_x)
+        self.default_x_min = min_x
+        self.default_x_max = max_x
+
+    def update_y_axis_zoom(self, min_y, max_y):
+        self.graph_canvas.update_y_axis(min_y, max_y)
+        self.default_y_min = min_y
+        self.default_y_max = max_y
+
+    def get_nice_step(self, range_size):
+        # Returns a 'nice' step value based on the given range. E.g., 80 → 10, 25 → 5, 3 → 0.5
+
+        raw_step = range_size / 10
+        exponent = int(np.floor(np.log10(raw_step)))
+        fraction = raw_step / 10 ** exponent
+
+        if fraction <= 1:
+            nice_fraction = 1
+        elif fraction <= 2:
+            nice_fraction = 2
+        elif fraction <= 5:
+            nice_fraction = 5
+        else:
+            nice_fraction = 10
+
+        return nice_fraction * (10 ** exponent)
 
 
 if __name__ == '__main__':

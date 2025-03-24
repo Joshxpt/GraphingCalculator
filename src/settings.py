@@ -55,9 +55,17 @@ class SettingsPanel(QWidget):
         x_axis_widget = self.update_x_axis()
         container_layout.addWidget(x_axis_widget, 0, Qt.AlignCenter)
 
+        # Update X-Axis Step
+        x_step_widget = self.update_x_axis_step()
+        container_layout.addWidget(x_step_widget, 0, Qt.AlignCenter)
+
         # Update Y-Axis
         y_axis_widget = self.update_y_axis()
         container_layout.addWidget(y_axis_widget, 0, Qt.AlignCenter)
+
+        # Update Y-Axis Step
+        y_step_widget = self.update_y_axis_step()
+        container_layout.addWidget(y_step_widget, 0, Qt.AlignCenter)
 
         container_layout.addStretch(1)
 
@@ -206,7 +214,7 @@ class SettingsPanel(QWidget):
                 QMessageBox.warning(self, "Invalid Range", "Minimum X must be less than Maximum X.")
                 return
 
-            self.main_window.graph_canvas.update_x_axis(min_value, max_value)  # ✅ Fixed
+            self.main_window.update_x_axis_zoom(min_value, max_value)
 
         except ValueError:
             QMessageBox.warning(self, "Invalid Input", "Please enter valid numbers for the X-axis range.")
@@ -262,11 +270,82 @@ class SettingsPanel(QWidget):
                 QMessageBox.warning(self, "Invalid Range", "Minimum Y must be less than Maximum Y.")
                 return
 
-            self.main_window.graph_canvas.update_y_axis(min_value, max_value)
+            self.main_window.update_y_axis_zoom(min_value, max_value)
 
         except ValueError:
             QMessageBox.warning(self, "Invalid Input", "Please enter valid numbers for the Y-axis range.")
 
+    def update_x_axis_step(self):
+
+        x_step_widget = QWidget()
+        x_step_layout = QHBoxLayout(x_step_widget)
+        x_step_layout.setContentsMargins(0, 0, 0, 0)
+        x_step_layout.setSpacing(5)
+
+        validator = QDoubleValidator()
+
+        self.x_step_input = QLineEdit()
+        self.x_step_input.setFont(QFont("Calibri", 14))
+        self.x_step_input.setStyleSheet("color: #595959; background-color: white; border: 1px solid #ccc; padding: 5px;")
+        self.x_step_input.setFixedWidth(50)
+        self.x_step_input.setValidator(validator)
+        self.x_step_input.returnPressed.connect(self.apply_x_step)
+
+        x_step_text = QLabel("Enter X-Axis Step", self)
+        x_step_text.setFont(QFont("Calibri", 14))
+        x_step_text.setStyleSheet("color: #595959;")
+
+        x_step_layout.addWidget(self.x_step_input)
+        x_step_layout.addWidget(x_step_text)
+
+        return x_step_widget
+
+    def update_y_axis_step(self):
+
+        y_step_widget = QWidget()
+        y_step_layout = QHBoxLayout(y_step_widget)
+        y_step_layout.setContentsMargins(0, 0, 0, 0)
+        y_step_layout.setSpacing(5)
+
+        validator = QDoubleValidator()
+
+        self.y_step_input = QLineEdit()
+        self.y_step_input.setFont(QFont("Calibri", 14))
+        self.y_step_input.setStyleSheet("color: #595959; background-color: white; border: 1px solid #ccc; padding: 5px;")
+        self.y_step_input.setFixedWidth(50)
+        self.y_step_input.setValidator(validator)
+        self.y_step_input.returnPressed.connect(self.apply_y_step)
+
+        y_step_text = QLabel("Enter Y-Axis Step", self)
+        y_step_text.setFont(QFont("Calibri", 14))
+        y_step_text.setStyleSheet("color: #595959;")
+
+        y_step_layout.addWidget(self.y_step_input)
+        y_step_layout.addWidget(y_step_text)
+
+        return y_step_widget
+
+    def apply_x_step(self):
+        step = self.x_step_input.text().strip()
+        try:
+            step = float(step)
+            if step <= 0:
+                raise ValueError
+            self.main_window.graph_canvas.x_step = step
+            self.main_window.graph_canvas.plot_default_graph()
+        except ValueError:
+            QMessageBox.warning(self, "Invalid Step", "Please enter a positive number for the X-axis step.")
+
+    def apply_y_step(self):
+        step = self.y_step_input.text().strip()
+        try:
+            step = float(step)
+            if step <= 0:
+                raise ValueError
+            self.main_window.graph_canvas.y_step = step
+            self.main_window.graph_canvas.plot_default_graph()
+        except ValueError:
+            QMessageBox.warning(self, "Invalid Step", "Please enter a positive number for the Y-axis step.")
 
 
 
