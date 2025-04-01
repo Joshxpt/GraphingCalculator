@@ -54,9 +54,11 @@ class MainWindow(QMainWindow):
         toolbar = self.setup_toolbar()
 
         # Add New Equation Button (+)
-        self.add_button = QPushButton("+")
+        self.add_button = QPushButton()
+        self.add_button.setIcon(QIcon(os.path.join(ICON_PATH, "grey_plus.png")))
+        self.add_button.setIconSize(QSize(18, 18))
         self.add_button.setFixedSize(40, 40)
-        self.add_button.setStyleSheet("border-radius: 20px; background-color: #f3f3f3; font-size: 20px;")
+        self.add_button.setStyleSheet("border-radius: 20px; background-color: #f3f3f3;")
         self.add_button.clicked.connect(self.add_equation_box)
 
         self.left_layout.addWidget(title_label, 0)
@@ -255,8 +257,8 @@ class MainWindow(QMainWindow):
 
         parsed_equation = parse_equation(equation_text)
         if parsed_equation is None:
-            QMessageBox.warning(self, "Invalid Equation",
-                                "Please enter a valid linear or quadratic equation (e.g., 'y = 2x^2 + 3x + 5').")
+            QMessageBox.warning(self, "Invalid Equation Entered. See below or check formatting",
+                                "This graph supports: linear, quadratic, cubic or quartic only")
             return
 
         equation_type, coefficients, dep_var, indep_var = parsed_equation
@@ -452,9 +454,3 @@ class MainWindow(QMainWindow):
 
         return nice_fraction * (10 ** exponent)
 
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())

@@ -115,11 +115,12 @@ class MathsPanel(QWidget):
                 result = solve_equation(equation_type, coefficients, indep_var)
                 self.show_plain_text_result_dialog(result)
             else:
-                # Handle other operations that use LaTeX display
+                # Handle symbolic math operations
                 if self.selected_operation == "Differentiate":
                     result = sp.diff(sympy_equation, independent_symbol)
                 elif self.selected_operation == "Integrate":
                     result = sp.integrate(sympy_equation, independent_symbol)
+                    result = sp.nsimplify(result, rational=True)
                 elif self.selected_operation == "Find Maximum":
                     result = find_maximum(equation_type, coefficients)
                 elif self.selected_operation == "Find Minimum":
@@ -127,15 +128,19 @@ class MathsPanel(QWidget):
                 else:
                     result = "Operation not implemented yet"
 
+                # Simplify and safely format result
                 if isinstance(result, sp.Basic):
-                    result = result.rewrite(sp.Rational)
-                    result = sp.nsimplify(result, rational=True)
+                    if isinstance(result, sp.Piecewise):
+                        result = result.args[0][0]
 
-                # Convert tuples to readable format
-                if isinstance(result, tuple):
+                    # Simplify only safely
+                    result = sp.nsimplify(result, rational=True)
+                    formatted_result = sp.latex(result, mode='plain').replace("log", "ln")
+
+                elif isinstance(result, tuple):
                     formatted_result = f"({result[0]}, {result[1]})"
                 else:
-                    formatted_result = sp.latex(result)
+                    formatted_result = str(result)
 
                 self.show_result_dialog(formatted_result)
 

@@ -55,6 +55,7 @@ class GraphCanvas(FigureCanvas):
         self.ax.set_xticks(xticks)
         self.ax.set_yticks(yticks)
 
+
         self.ax.tick_params(axis='both', direction='in', length=0)
 
         if self.grid_enabled:
@@ -64,14 +65,30 @@ class GraphCanvas(FigureCanvas):
         self.ax.set_yticklabels([])
 
         if self.axis_numbers_enabled:
+            x_offset = (self.y_max - self.y_min) * 0.02
+            y_offset = (self.x_max - self.x_min) * 0.02
+
             for x in np.arange(self.x_min, self.x_max + self.x_step, self.x_step):
                 if x != 0:
-                    self.ax.annotate(str(int(x)) if x.is_integer() else f"{x:.2f}", (x, -0.5),
-                                     fontsize=7, ha='center', va='top', color='grey')
+                    self.ax.annotate(
+                        str(int(x)) if x.is_integer() else f"{x:.2f}",
+                        (x, 0 - x_offset),
+                        fontsize=7,
+                        ha='center',
+                        va='top',
+                        color='grey'
+                    )
+
             for y in np.arange(self.y_min, self.y_max + self.y_step, self.y_step):
                 if y != 0:
-                    self.ax.annotate(str(int(y)) if y.is_integer() else f"{y:.2f}", (-0.5, y),
-                                     fontsize=7, ha='right', va='center', color='grey')
+                    self.ax.annotate(
+                        str(int(y)) if y.is_integer() else f"{y:.2f}",
+                        (0 - y_offset, y),
+                        fontsize=7,
+                        ha='right',
+                        va='center',
+                        color='grey'
+                    )
 
         self.redraw_equations()
         self.draw()
@@ -92,6 +109,46 @@ class GraphCanvas(FigureCanvas):
             a, b, c = coefficients
             y_values = a * (x_values ** 2) + b * x_values + c
             equation_label = f"{indep_var} = {a}x² + {b}x + {c}"
+
+        elif equation_type == "cubic":
+            a, b, c, d = coefficients
+            y_values = a * (x_values ** 3) + b * (x_values ** 2) + c * x_values + d
+            equation_label = f"{indep_var} = {a}x³ + {b}x² + {c}x + {d}"
+
+        elif equation_type == "quartic":
+            a, b, c, d, e = coefficients
+            y_values = a * (x_values ** 4) + b * (x_values ** 3) + c * (x_values ** 2) + d * x_values + e
+            equation_label = f"{indep_var} = {a}x⁴ + {b}x³ + {c}x² + {d}x + {e}"
+
+        elif equation_type == "reciprocal":
+            numerator, exponent = coefficients
+            x_values = np.linspace(self.x_min, self.x_max, 400)
+            x_values = x_values[x_values != 0]
+
+            y_values = numerator / (x_values ** exponent)
+            equation_label = f"{indep_var} = {numerator}/{indep_var}^{exponent}"
+
+        elif equation_type == "exponential":
+
+            (base,) = coefficients
+            if base == "e":
+                y_values = np.exp(x_values)
+                equation_label = f"{indep_var} = e^{indep_var}"
+
+            else:
+                y_values = np.power(float(base), x_values)
+                equation_label = f"{indep_var} = {base}^{indep_var}"
+
+        elif equation_type == "logarithmic":
+            (base,) = coefficients
+            x_values = np.linspace(0.01, self.x_max, 400)  # Avoid log(0)
+
+            if base == "e":
+                y_values = np.log(x_values)
+                equation_label = f"{indep_var} = ln({indep_var})"
+            else:
+                y_values = np.log(x_values) / np.log(float(base))
+                equation_label = f"{indep_var} = log[{base}]({indep_var})"
 
         else:
             raise ValueError("Unsupported equation type")
