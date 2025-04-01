@@ -33,6 +33,14 @@ def convert_to_sympy(coefficients, equation_type, indep_var):
             equation = sp.ln(independent_symbol)
         else:
             equation = sp.log(independent_symbol, base)
+    elif equation_type == "trigonometric":
+        (func,) = coefficients
+        if func == "sin":
+            equation = sp.sin(independent_symbol)
+        elif func == "cos":
+            equation = sp.cos(independent_symbol)
+        elif func == "tan":
+            equation = sp.tan(independent_symbol)
     else:
         raise ValueError("Unsupported equation type")
 

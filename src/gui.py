@@ -13,6 +13,7 @@ from settings import SettingsPanel
 from maths import MathsPanel
 import numpy as np
 from pick_equation import Pick_Equation_Panel
+from manual import ManualPanel
 
 
 # Define constants for paths
@@ -76,12 +77,17 @@ class MainWindow(QMainWindow):
         # --- PICK EQUATION PANEL ---
         self.pick_equation_panel = Pick_Equation_Panel(self)
 
+        # --- PICK MANUAL PANEL ---
+        self.manual_panel = ManualPanel(self)
+
         # --- LEFT SECTION (STACKED WIDGET) ---
         self.left_section = QStackedWidget()  # Allows switching between panels
         self.left_section.addWidget(self.equation_panel)  # Index 0 → Equation Panel
         self.left_section.addWidget(self.settings_panel)  # Index 1 → Settings Panel
         self.left_section.addWidget(self.maths_panel)  # Index 2 → Maths Panel
         self.left_section.addWidget(self.pick_equation_panel)  # Index 3 → Choose Equation Panel
+        self.left_section.addWidget(self.manual_panel)  # Index 4 → Manual Panel
+        self.manual_index = self.left_section.count() - 1
 
         # --- GRAPH SECTION ---
         self.graph_section = QWidget()

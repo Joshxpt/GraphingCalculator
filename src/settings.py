@@ -1,7 +1,7 @@
 import os
 from PyQt5.QtWidgets import (QWidget, QFrame,
                              QHBoxLayout, QVBoxLayout, QLabel, QSizePolicy, QToolButton,
-                             QLineEdit, QMessageBox)
+                             QLineEdit, QMessageBox, QPushButton)
 from PyQt5.QtGui import QFont, QIcon, QDoubleValidator
 from PyQt5.QtCore import Qt, QSize
 
@@ -66,6 +66,13 @@ class SettingsPanel(QWidget):
         # Update Y-Axis Step
         y_step_widget = self.update_y_axis_step()
         container_layout.addWidget(y_step_widget, 0, Qt.AlignCenter)
+
+        # Open User Manual
+        manual_button = QPushButton("Open User Manual")
+        manual_button.setStyleSheet(
+            "padding: 10px; font-size: 16px; background-color: #ddd; border: none; color: #595959;")
+        manual_button.clicked.connect(self.open_manual)
+        container_layout.addWidget(manual_button, 0, Qt.AlignCenter)
 
         container_layout.addStretch(1)
 
@@ -346,6 +353,9 @@ class SettingsPanel(QWidget):
             self.main_window.graph_canvas.plot_default_graph()
         except ValueError:
             QMessageBox.warning(self, "Invalid Step", "Please enter a positive number for the Y-axis step.")
+
+    def open_manual(self):
+        self.main_window.left_section.setCurrentIndex(self.main_window.manual_index)
 
 
 

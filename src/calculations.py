@@ -60,6 +60,11 @@ def parse_equation(equation_str):
             independent_var = ln_match.group(1)
             return "logarithmic", ("e",), dependent_var, independent_var
 
+    # Trigonometric
+    if rhs in ["sinx", "cosx", "tanx"]:
+        trig_map = {"sinx": "sin", "cosx": "cos", "tanx": "tan"}
+        return "trigonometric", (trig_map[rhs],), dependent_var, "x"
+
     # Handle polynomial equations
     degree_match = re.findall(r"\^(\d+)", rhs)
     max_degree = max([int(d) for d in degree_match], default=1)
