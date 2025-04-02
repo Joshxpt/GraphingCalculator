@@ -171,6 +171,25 @@ class GraphCanvas(FigureCanvas):
                 y_values[np.abs(y_values) > 20] = np.nan
                 equation_label = f"{indep_var} = tan({indep_var})"
 
+
+        elif equation_type == "inverse_trig":
+
+            (func,) = coefficients
+
+            if func == "arcsin":
+                x_values = x_values[(x_values >= -1) & (x_values <= 1)]
+                y_values = np.arcsin(x_values)
+                equation_label = f"{indep_var} = arcsin({indep_var})"
+
+            elif func == "arccos":
+                x_values = x_values[(x_values >= -1) & (x_values <= 1)]
+                y_values = np.arccos(x_values)
+                equation_label = f"{indep_var} = arccos({indep_var})"
+
+            elif func == "arctan":
+                y_values = np.arctan(x_values)
+                equation_label = f"{indep_var} = arctan({indep_var})"
+
         else:
             raise ValueError("Unsupported equation type")
 

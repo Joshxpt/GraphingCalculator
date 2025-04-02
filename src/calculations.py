@@ -65,6 +65,10 @@ def parse_equation(equation_str):
         trig_map = {"sinx": "sin", "cosx": "cos", "tanx": "tan"}
         return "trigonometric", (trig_map[rhs],), dependent_var, "x"
 
+    if rhs in ["arcsinx", "arccosx", "arctanx"]:
+        inverse_map = {"arcsinx": "arcsin", "arccosx": "arccos", "arctanx": "arctan"}
+        return "inverse_trig", (inverse_map[rhs],), dependent_var, "x"
+
     # Handle polynomial equations
     degree_match = re.findall(r"\^(\d+)", rhs)
     max_degree = max([int(d) for d in degree_match], default=1)

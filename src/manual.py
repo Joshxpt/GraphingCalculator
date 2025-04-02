@@ -39,7 +39,8 @@ class ManualPanel(QWidget):
             ("Reciprocal Equations", "Format: y = a / x^n\nExamples: y = 1/x, y = 3/x^2"),
             ("Exponential Equations", "Format: y = a^x\nExamples: y = 2^x, y = e^x"),
             ("Logarithmic Equations", "Format: y = logx (base 10), y = lnx (natural log), y = log[base]x\nExamples: y = logx, y = lnx, y = log[2]x"),
-            ("Trigonometric Equations", "Format: y = sinx, cosx, or tanx\nExamples: y = sinx, y = cosx, y = tanx")
+            ("Trigonometric Equations", "Format: y = sinx, cosx, or tanx\nExamples: y = sinx, y = cosx, y = tanx"),
+            ("Inverse Trigonometric Equations" , "Format: y = arcsinx, arccosx, arctanx\nExamples: y = arcsinx, y = arctanx")
         ]
 
         for title, content in manual_sections:

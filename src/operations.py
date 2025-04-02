@@ -41,6 +41,14 @@ def convert_to_sympy(coefficients, equation_type, indep_var):
             equation = sp.cos(independent_symbol)
         elif func == "tan":
             equation = sp.tan(independent_symbol)
+    elif equation_type == "inverse_trig":
+        (func,) = coefficients
+        if func == "arcsin":
+            equation = sp.asin(independent_symbol)
+        elif func == "arccos":
+            equation = sp.acos(independent_symbol)
+        elif func == "arctan":
+            equation = sp.atan(independent_symbol)
     else:
         raise ValueError("Unsupported equation type")
 
