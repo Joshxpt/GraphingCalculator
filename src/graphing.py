@@ -26,6 +26,8 @@ class GraphCanvas(FigureCanvas):
         self.grid_enabled = True
         self.axis_numbers_enabled = True
 
+        self.unit_mode = "radians"
+
         self.plot_default_graph()
 
     def plot_default_graph(self):
@@ -150,17 +152,22 @@ class GraphCanvas(FigureCanvas):
                 y_values = np.log(x_values) / np.log(float(base))
                 equation_label = f"{indep_var} = log[{base}]({indep_var})"
 
+
         elif equation_type == "trigonometric":
+
             (func,) = coefficients
+            x_vals = np.deg2rad(x_values) if self.unit_mode == "degrees" else x_values
 
             if func == "sin":
-                y_values = np.sin(x_values)
+                y_values = np.sin(x_vals)
                 equation_label = f"{indep_var} = sin({indep_var})"
+
             elif func == "cos":
-                y_values = np.cos(x_values)
+                y_values = np.cos(x_vals)
                 equation_label = f"{indep_var} = cos({indep_var})"
+
             elif func == "tan":
-                y_values = np.tan(x_values)
+                y_values = np.tan(x_vals)
                 y_values[np.abs(y_values) > 20] = np.nan
                 equation_label = f"{indep_var} = tan({indep_var})"
 

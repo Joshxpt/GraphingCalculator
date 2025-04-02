@@ -67,6 +67,15 @@ class SettingsPanel(QWidget):
         y_step_widget = self.update_y_axis_step()
         container_layout.addWidget(y_step_widget, 0, Qt.AlignCenter)
 
+        # Degrees/Radians Toggle Button
+        self.unit_mode = "radians"
+
+        self.unit_button = QPushButton("Convert to Degrees")
+        self.unit_button.setStyleSheet(
+            "padding: 10px; font-size: 16px; background-color: #f3f3f3; border: 2px solid #595959; color: #595959;")
+        self.unit_button.clicked.connect(self.toggle_unit_mode)
+        container_layout.addWidget(self.unit_button, 0, Qt.AlignCenter)
+
         # Open User Manual
         manual_button = QPushButton("Open User Manual")
         manual_button.setStyleSheet(
@@ -353,6 +362,18 @@ class SettingsPanel(QWidget):
             self.main_window.graph_canvas.plot_default_graph()
         except ValueError:
             QMessageBox.warning(self, "Invalid Step", "Please enter a positive number for the Y-axis step.")
+
+    def toggle_unit_mode(self):
+        if self.unit_mode == "radians":
+            self.unit_mode = "degrees"
+            self.unit_button.setText("Convert to Radians")
+            self.main_window.graph_canvas.unit_mode = "degrees"
+        else:
+            self.unit_mode = "radians"
+            self.unit_button.setText("Convert to Degrees")
+            self.main_window.graph_canvas.unit_mode = "radians"
+
+        self.main_window.graph_canvas.plot_default_graph()
 
     def open_manual(self):
         self.main_window.left_section.setCurrentIndex(self.main_window.manual_index)
