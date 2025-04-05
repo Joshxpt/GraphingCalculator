@@ -109,7 +109,10 @@ class MathsPanel(QWidget):
             equation_type, coefficients, _, indep_var = parsed_equation
 
             independent_symbol = sp.Symbol(indep_var)
-            sympy_equation = convert_to_sympy(coefficients, equation_type, indep_var)
+            if equation_type == "symbolic":
+                sympy_equation = coefficients
+            else:
+                sympy_equation = convert_to_sympy(coefficients, equation_type, indep_var)
 
             if self.selected_operation == "Solve Equation":
                 result = solve_equation(equation_type, coefficients, indep_var)

@@ -1,5 +1,12 @@
 import re
-
+import sympy as sp
+from sympy.parsing.sympy_parser import (
+    parse_expr,
+    standard_transformations,
+    implicit_multiplication_application,
+    convert_xor,
+    function_exponentiation
+)
 
 def parse_equation(equation_str):
     equation_str = equation_str.replace(" ", "")
@@ -9,129 +16,52 @@ def parse_equation(equation_str):
         return None
 
     dependent_var = match.group(1)
-    rhs = match.group(2)
+    rhs_str = match.group(2)
 
-    exp_match = re.match(r"^([0-9\.eE]+)\^([a-zA-Z])$", rhs)
-    if exp_match:
-        base_str, independent_var = exp_match.groups()
-        base = base_str
+    # Fix bracketless trig/log/ln functions: sinx → sin(x), etc.
+    functions = ["sin", "cos", "tan", "log", "ln", "arcsin", "arccos", "arctan"]
+    for func in functions:
+        rhs_str = re.sub(rf"{func}([a-zA-Z0-9\(])", rf"{func}(\1", rhs_str)
+        rhs_str = re.sub(rf"{func}\(([^()]+)\)", rf"{func}(\1)", rhs_str)
 
-        if base.lower() == "e":
-            base = "e"
-        else:
-            try:
-                base = float(base)
-            except:
-                return None
+    # Fix exponentials like e^3x → e^(3x)
+    rhs_str = re.sub(r"e\^([a-zA-Z0-9\+\-\*/\^]+)", r"e^(\1)", rhs_str)
 
-        equation_type = "exponential"
-        coefficients = (base,)
-        return equation_type, coefficients, dependent_var, independent_var
+    # Close all unmatched open brackets
+    open_count = rhs_str.count('(')
+    close_count = rhs_str.count(')')
+    if open_count > close_count:
+        rhs_str += ')' * (open_count - close_count)
 
-    reciprocal_match = re.match(r"^([+\-]?\d*(?:\.\d+)?)\/([a-zA-Z])(?:\^(\d+))?$", rhs)
-    if reciprocal_match:
-        numerator_str, independent_var, exponent_str = reciprocal_match.groups()
+    try:
+        transformations = standard_transformations + (
+            implicit_multiplication_application,
+            convert_xor,
+            function_exponentiation,
+        )
 
-        numerator = float(numerator_str) if numerator_str not in ["", "+", "-"] else float(numerator_str + "1")
-        exponent = int(exponent_str) if exponent_str else 1
+        # Map 'e' to Euler's constant
+        local_dict = {
+            "e": sp.E,
+            "sin": sp.sin,
+            "cos": sp.cos,
+            "tan": sp.tan,
+            "log": sp.log,
+            "ln": sp.ln,
+            "arcsin": sp.asin,
+            "arccos": sp.acos,
+            "arctan": sp.atan,
+        }
 
-        equation_type = "reciprocal"
-        coefficients = (numerator, exponent)
+        expr = parse_expr(rhs_str, transformations=transformations, local_dict=local_dict)
 
-        return equation_type, coefficients, dependent_var, independent_var
-
-    # Logarithmic
-    if rhs.startswith("log["):
-        log_match = re.match(r"log\[(\d+(\.\d+)?)\]([a-zA-Z])", rhs)
-        if log_match:
-            base, _, independent_var = log_match.groups()
-            base = float(base)
-            return "logarithmic", (base,), dependent_var, independent_var
-
-    elif rhs.startswith("log"):
-        log_match = re.match(r"log([a-zA-Z])", rhs)
-        if log_match:
-            independent_var = log_match.group(1)
-            return "logarithmic", (10,), dependent_var, independent_var
-
-    elif rhs.startswith("ln"):
-        ln_match = re.match(r"ln([a-zA-Z])", rhs)
-        if ln_match:
-            independent_var = ln_match.group(1)
-            return "logarithmic", ("e",), dependent_var, independent_var
-
-    # Trigonometric
-    if rhs in ["sinx", "cosx", "tanx"]:
-        trig_map = {"sinx": "sin", "cosx": "cos", "tanx": "tan"}
-        return "trigonometric", (trig_map[rhs],), dependent_var, "x"
-
-    if rhs in ["arcsinx", "arccosx", "arctanx"]:
-        inverse_map = {"arcsinx": "arcsin", "arccosx": "arccos", "arctanx": "arctan"}
-        return "inverse_trig", (inverse_map[rhs],), dependent_var, "x"
-
-    # Handle polynomial equations
-    degree_match = re.findall(r"\^(\d+)", rhs)
-    max_degree = max([int(d) for d in degree_match], default=1)
-
-    if max_degree > 4:
+    except (sp.SympifyError, SyntaxError):
         return None
 
-    # Find independent variable (e.g., x in x^2)
-    var_match = re.search(r"([a-zA-Z])(\^?\d*)", rhs)
-    independent_var = var_match.group(1) if var_match else "x"
+    symbols = expr.free_symbols
+    if not symbols:
+        return None
 
-    # Initialize coefficients for full degree
-    coeffs = [0] * (max_degree + 1)
+    independent_var = str(list(symbols)[0])
 
-    # Find terms like +3x^2, -x, +5 etc.
-    term_pattern = re.findall(r"([+\-]?[^+\-]+)", rhs)
-
-    for term in term_pattern:
-        term = term.strip()
-        if independent_var in term:
-            if "^" in term:
-                parts = term.split("^", 1)
-                if len(parts) != 2:
-                    return None
-                base, power = parts
-                try:
-                    power = int(power)
-                except:
-                    return None
-            else:
-                base = term
-                power = 1
-
-            base = base.replace(independent_var, "")
-            if base in ("", "+"):
-                coeff = 1
-            elif base == "-":
-                coeff = -1
-            else:
-                try:
-                    coeff = float(eval(base))
-                except:
-                    return None
-        else:
-            power = 0
-            try:
-                coeff = float(eval(term))
-            except:
-                return None
-
-        if power > max_degree or power < 0:
-            return None
-
-        coeffs[power] = coeff
-
-    coeffs = coeffs[::-1]
-    coeffs = [int(c) if float(c).is_integer() else float(c) for c in coeffs]
-
-    equation_types = {
-        1: "linear",
-        2: "quadratic",
-        3: "cubic",
-        4: "quartic"
-    }
-
-    return equation_types[max_degree], tuple(coeffs), dependent_var, independent_var
+    return "symbolic", expr, dependent_var, independent_var

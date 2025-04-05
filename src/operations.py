@@ -2,6 +2,8 @@ import sympy as sp
 
 
 def convert_to_sympy(coefficients, equation_type, indep_var):
+    if equation_type == "symbolic":
+        return coefficients  # already a sympy expression
 
     independent_symbol = sp.Symbol(indep_var)
 
@@ -22,42 +24,35 @@ def convert_to_sympy(coefficients, equation_type, indep_var):
         equation = numerator / independent_symbol ** exponent
     elif equation_type == "exponential":
         (base,) = coefficients
-        if base == "e":
-            equation = sp.exp(independent_symbol)
-        else:
-            base = sp.Rational(str(base)) if isinstance(base, float) else base
-            equation = sp.Pow(base, independent_symbol, evaluate=False)
+        equation = sp.exp(independent_symbol) if base == "e" else sp.Pow(base, independent_symbol)
     elif equation_type == "logarithmic":
         (base,) = coefficients
-        if base == "e":
-            equation = sp.ln(independent_symbol)
-        else:
-            equation = sp.log(independent_symbol, base)
+        equation = sp.ln(independent_symbol) if base == "e" else sp.log(independent_symbol, base)
     elif equation_type == "trigonometric":
         (func,) = coefficients
-        if func == "sin":
-            equation = sp.sin(independent_symbol)
-        elif func == "cos":
-            equation = sp.cos(independent_symbol)
-        elif func == "tan":
-            equation = sp.tan(independent_symbol)
+        equation = getattr(sp, func)(independent_symbol)
     elif equation_type == "inverse_trig":
         (func,) = coefficients
-        if func == "arcsin":
-            equation = sp.asin(independent_symbol)
-        elif func == "arccos":
-            equation = sp.acos(independent_symbol)
-        elif func == "arctan":
-            equation = sp.atan(independent_symbol)
+        equation = getattr(sp, "a" + func)(independent_symbol)
     else:
         raise ValueError("Unsupported equation type")
 
     return equation
 
+
 def solve_equation(equation_type, coefficients, indep_var):
 
     if not isinstance(indep_var, str):
         raise TypeError(f"Expected 'indep_var' to be a string, got {type(indep_var)}")
+
+    if equation_type == "symbolic":
+        x = sp.Symbol(indep_var)
+        expr = coefficients
+        x_intercepts = sp.solve(expr, x)
+        x_str = ', '.join([str(val) for val in x_intercepts]) if x_intercepts else "No Real Solution"
+        y_at_zero = expr.subs(x, 0)
+        y_str = "Undefined (Division by Zero)" if y_at_zero == sp.zoo else str(y_at_zero)
+        return f"When y=0: {x_str}\nWhen x=0: {y_str}"
 
     x = sp.Symbol(indep_var)
     equation = convert_to_sympy(coefficients, equation_type, indep_var)
