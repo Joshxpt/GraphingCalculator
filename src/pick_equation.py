@@ -1,7 +1,7 @@
 import os
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QRadioButton, QButtonGroup, QLabel,
-                                 QPushButton, QMessageBox, QScrollArea, QGroupBox,
-                                 QHBoxLayout, QCheckBox, QLineEdit, QSizePolicy, QFrame)
+                                 QPushButton, QMessageBox, QHBoxLayout, QCheckBox,
+                                    QLineEdit, QSizePolicy, QFrame)
 from PyQt5.QtCore import Qt
 
 ICON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "assets", "icons"))
@@ -145,3 +145,14 @@ class Pick_Equation_Panel(QWidget):
             QMessageBox.warning(self, "No Equations", "Please select at least one equation.")
             return
         self.main_window.maths_panel.perform_area_operation(selected)
+
+    def execute_stationary_operation(self):
+        selected = [
+            btn.text() for btn in self.equation_group.buttons()
+            if btn.isChecked()
+        ]
+        if not selected:
+            QMessageBox.warning(self, "No Equation Selected", "Please select an equation to find stationary points.")
+            return
+        self.main_window.maths_panel.perform_stationary_operation(selected[0])
+

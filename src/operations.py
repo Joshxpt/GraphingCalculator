@@ -3,7 +3,7 @@ import sympy as sp
 
 def convert_to_sympy(coefficients, equation_type, indep_var):
     if equation_type == "symbolic":
-        return coefficients  # already a sympy expression
+        return coefficients  # Already a sympy expression
 
     independent_symbol = sp.Symbol(indep_var)
 

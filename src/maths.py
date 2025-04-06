@@ -1,16 +1,14 @@
 import re
-
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame, QHBoxLayout,
-                             QRadioButton, QButtonGroup, QSizePolicy, QMessageBox,
+                             QRadioButton, QButtonGroup, QSizePolicy,
                              QDialog, QPushButton)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 import matplotlib.pyplot as plt
 import tempfile
 import os
-from pick_equation import Pick_Equation_Panel
 from calculations import parse_equation
-from operations import solve_equation, differentiate, integrate, find_maximum, find_minimum, convert_to_sympy
+from operations import solve_equation, find_maximum, find_minimum, convert_to_sympy
 import sympy as sp
 
 class MathsPanel(QWidget):
@@ -80,7 +78,16 @@ class MathsPanel(QWidget):
         area_button.clicked.connect(lambda checked, op="Find Area Under Graphs": self.go_to_area_panel(op))
         self.operations_group.addButton(area_button)
 
+        stationary_button = QRadioButton("Find Stationary Points")
+        stationary_button.setStyleSheet("font-size: 16px; color: #595959;")
+        stationary_button.setFocusPolicy(Qt.NoFocus)
+        stationary_button.clicked.connect(
+            lambda checked, op="Find Stationary Points": self.go_to_equation_selection(op))
+        self.operations_group.addButton(stationary_button)
+
         container_layout.addWidget(area_button, 0, Qt.AlignCenter)
+        container_layout.addWidget(stationary_button, 0, Qt.AlignCenter)
+
         container_layout.addStretch(1)
 
         self.left_layout.addWidget(container)
@@ -122,8 +129,8 @@ class MathsPanel(QWidget):
 
         if parsed_equation:
             equation_type, coefficients, _, indep_var = parsed_equation
-
             independent_symbol = sp.Symbol(indep_var)
+
             if equation_type == "symbolic":
                 sympy_equation = coefficients
             else:
@@ -132,8 +139,46 @@ class MathsPanel(QWidget):
             if self.selected_operation == "Solve Equation":
                 result = solve_equation(equation_type, coefficients, indep_var)
                 self.show_plain_text_result_dialog(result)
+
+            elif self.selected_operation == "Find Stationary Points":
+                # First and second derivatives
+                first_diff = sp.diff(sympy_equation, independent_symbol)
+                second_diff = sp.diff(first_diff, independent_symbol)
+
+                # Solve dy/dx = 0
+                critical_points = sp.solve(first_diff, independent_symbol)
+
+                result_lines = [
+                    f"First derivative: {sp.latex(first_diff)}",
+                    f"Second derivative: {sp.latex(second_diff)}"
+                ]
+
+                if not critical_points:
+                    result_lines.append("No stationary points found.")
+                else:
+                    for point in critical_points:
+                        try:
+                            point_val = float(point)
+                            y_val = sympy_equation.subs(independent_symbol, point_val)
+                            curvature = second_diff.subs(independent_symbol, point_val)
+                            if curvature > 0:
+                                nature = "Minimum"
+                            elif curvature < 0:
+                                nature = "Maximum"
+                            else:
+                                nature = "Point of Inflection"
+
+                            result_lines.append(
+                                f"At x = {point_val:.2f}, y = {y_val.evalf():.2f} → {nature}"
+                            )
+                        except Exception as e:
+                            result_lines.append(f"Could not evaluate point {point}: {e}")
+
+                result = "\n".join(result_lines)
+                self.show_plain_text_result_dialog(result)
+
             else:
-                # Handle symbolic math operations
+                # Other symbolic operations
                 if self.selected_operation == "Differentiate":
                     result = sp.diff(sympy_equation, independent_symbol)
                 elif self.selected_operation == "Integrate":
@@ -146,15 +191,11 @@ class MathsPanel(QWidget):
                 else:
                     result = "Operation not implemented yet"
 
-                # Simplify and safely format result
                 if isinstance(result, sp.Basic):
                     if isinstance(result, sp.Piecewise):
                         result = result.args[0][0]
-
-                    # Simplify only safely
                     result = sp.nsimplify(result, rational=True)
                     formatted_result = sp.latex(result, mode='plain').replace("log", "ln")
-
                 elif isinstance(result, tuple):
                     formatted_result = f"({result[0]}, {result[1]})"
                 else:
@@ -162,7 +203,7 @@ class MathsPanel(QWidget):
 
                 self.show_result_dialog(formatted_result)
 
-            # Reset operation buttons regardless of which operation was performed
+            # Reset operation button states
             self.operations_group.setExclusive(False)
             for button in self.operations_group.buttons():
                 button.setChecked(False)
@@ -300,5 +341,46 @@ class MathsPanel(QWidget):
             formatted_total = f"{total_area.evalf():.2f}"
 
         results.append(f"\nTotal area: {formatted_total} units²")
+        self.show_plain_text_result_dialog("\n".join(results))
+        self.main_window.left_section.setCurrentIndex(2)
+
+    def perform_stationary_operation(self, equation_str):
+        parsed = parse_equation(equation_str)
+        if not parsed:
+            self.show_plain_text_result_dialog("Invalid equation.")
+            return
+
+        equation_type, coefficients, _, indep_var = parsed
+        x = sp.Symbol(indep_var)
+
+        if equation_type != "symbolic":
+            expr = convert_to_sympy(coefficients, equation_type, indep_var)
+        else:
+            expr = coefficients
+
+        first_deriv = sp.diff(expr, x)
+        second_deriv = sp.diff(first_deriv, x)
+        critical_points = sp.solve(first_deriv, x)
+
+        results = [f"Second Derivative: {sp.latex(second_deriv)}", ""]
+
+        if not critical_points:
+            results.append("No stationary points found.")
+        else:
+            for point in critical_points:
+                if not point.is_real:
+                    continue
+                y_val = expr.subs(x, point)
+                second_val = second_deriv.subs(x, point)
+
+                if second_val > 0:
+                    nature = "Minimum"
+                elif second_val < 0:
+                    nature = "Maximum"
+                else:
+                    nature = "Point of Inflection"
+
+                results.append(f"Stationary Point at ({point}, {y_val}): {nature}")
+
         self.show_plain_text_result_dialog("\n".join(results))
         self.main_window.left_section.setCurrentIndex(2)

@@ -1,10 +1,9 @@
-import sys
 import os
 import re
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QFrame,
+from PyQt5.QtWidgets import (QMainWindow, QWidget, QFrame,
                              QHBoxLayout, QVBoxLayout, QLabel, QSizePolicy, QToolButton,
                              QLineEdit, QPushButton, QMessageBox, QStackedWidget)
-from PyQt5.QtGui import QFont, QFontDatabase, QIcon
+from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import Qt, QSize
 
 from graphing import GraphCanvas
@@ -443,8 +442,8 @@ class MainWindow(QMainWindow):
         self.default_y_max = max_y
 
     def get_nice_step(self, range_size):
-        # Returns a 'nice' step value based on the given range. E.g., 80 → 10, 25 → 5, 3 → 0.5
 
+        # Returns a 'nice' step value based on the given range. E.g., 80 → 10, 25 → 5, 3 → 0.5
         raw_step = range_size / 10
         exponent = int(np.floor(np.log10(raw_step)))
         fraction = raw_step / 10 ** exponent

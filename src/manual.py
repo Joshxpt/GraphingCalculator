@@ -40,7 +40,12 @@ class ManualPanel(QWidget):
             ("Exponential Equations", "Format: y = a^x\nExamples: y = 2^x, y = e^x"),
             ("Logarithmic Equations", "Format: y = logx (base 10), y = lnx (natural log), y = log[base]x\nExamples: y = logx, y = lnx, y = log[2]x"),
             ("Trigonometric Equations", "Format: y = sinx, cosx, or tanx\nExamples: y = sinx, y = cosx, y = tanx"),
-            ("Inverse Trigonometric Equations" , "Format: y = arcsinx, arccosx, arctanx\nExamples: y = arcsinx, y = arctanx")
+            ("Inverse Trigonometric Equations" , "Format: y = arcsinx, arccosx, arctanx\nExamples: y = arcsinx, y = arctanx"),
+            ("Advanced Operations – Area Under Graphs",
+             "After selecting 'Find Area Under Graphs', you may tick one or more equations to include.\n"
+             "You can optionally enter lower and upper x-limits for each. If these are left blank, the area will be calculated between the graph’s x-intercepts where possible.\n"
+             "If the graph cannot be integrated or lacks valid bounds, it will be skipped.\n"
+             "Results are shown as simplified fractions (if possible), along with a decimal approximation.")
         ]
 
         for title, content in manual_sections:
