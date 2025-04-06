@@ -1,3 +1,5 @@
+import re
+
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame, QHBoxLayout,
                              QRadioButton, QButtonGroup, QSizePolicy, QMessageBox,
                              QDialog, QPushButton)
@@ -47,12 +49,11 @@ class MathsPanel(QWidget):
         operations_text.setStyleSheet("color: #595959; font-weight: bold; font-size: 20px; font-family: Calibri")
         container_layout.addWidget(operations_text, 0, Qt.AlignCenter)
 
-        # ✅ Operation Selection (Radio Buttons)
         operations_container = QWidget()
         operations_layout = QVBoxLayout(operations_container)
         operations_layout.setAlignment(Qt.AlignCenter)
 
-        self.operations_group = QButtonGroup(self)  # Group for mutual exclusivity
+        self.operations_group = QButtonGroup(self)
 
         operations = ["Solve Equation", "Find Maximum", "Find Minimum", "Differentiate", "Integrate"]
         for operation in operations:
@@ -66,7 +67,21 @@ class MathsPanel(QWidget):
             operations_layout.addSpacing(5)
 
         container_layout.addWidget(operations_container, 0, Qt.AlignCenter)
-        container_layout.addStretch(1)  # Push everything upwards
+
+        # Advanced Operations Title
+        advanced_text = QLabel("Advanced Operations", self)
+        advanced_text.setStyleSheet("color: #595959; font-weight: bold; font-size: 20px; font-family: Calibri;")
+        container_layout.addWidget(advanced_text, 0, Qt.AlignCenter)
+
+        # Advanced Operation Radio
+        area_button = QRadioButton("Find Area Under Graphs")
+        area_button.setStyleSheet("font-size: 16px; color: #595959;")
+        area_button.setFocusPolicy(Qt.NoFocus)
+        area_button.clicked.connect(lambda checked, op="Find Area Under Graphs": self.go_to_area_panel(op))
+        self.operations_group.addButton(area_button)
+
+        container_layout.addWidget(area_button, 0, Qt.AlignCenter)
+        container_layout.addStretch(1)
 
         self.left_layout.addWidget(container)
 
@@ -205,3 +220,85 @@ class MathsPanel(QWidget):
 
         dialog.setLayout(layout)
         dialog.exec_()
+
+    def go_to_area_panel(self, operation):
+        self.selected_operation = operation
+        self.main_window.pick_equation_panel.load_equations(multi_select=True)  # Pass flag for checkboxes
+        self.main_window.left_section.setCurrentIndex(3)
+
+    def perform_area_operation(self, equation_info_list):
+        total_area = sp.S(0)
+        results = []
+
+        for eq, lower_text, upper_text in equation_info_list:
+            parsed = parse_equation(eq)
+            if not parsed:
+                results.append(f"Could not parse: {eq}")
+                continue
+
+            equation_type, coefficients, _, indep_var = parsed
+
+            if equation_type != "symbolic":
+                expr = convert_to_sympy(coefficients, equation_type, indep_var)
+            else:
+                expr = coefficients
+
+            x = sp.Symbol(indep_var)
+
+            # Convert limits or fallback to intercepts
+            try:
+                lower = sp.sympify(lower_text) if lower_text else None
+                upper = sp.sympify(upper_text) if upper_text else None
+            except ValueError:
+                results.append(f"Invalid bounds for `{eq}`. Skipped.")
+                continue
+
+            if lower is None or upper is None:
+                try:
+                    solution = solve_equation(equation_type, coefficients, indep_var)
+                    match = re.search(r"When y=0: (.*?)\n", solution + "\n")
+                    if not match:
+                        raise ValueError("Could not extract x-intercepts")
+                    values_str = match.group(1)
+                    x_vals = [float(val.strip()) for val in re.findall(r"[-+]?\d*\.?\d+", values_str)]
+                    if len(x_vals) < 2:
+                        raise ValueError("Not enough intercepts")
+                    x_vals.sort()
+                    lower = lower if lower is not None else x_vals[0]
+                    upper = upper if upper is not None else x_vals[-1]
+                except:
+                    results.append(f"Failed to infer bounds for `{eq}`. Skipped.")
+                    continue
+
+
+            if lower >= upper:
+                results.append(f"Lower bound must be less than upper bound for `{eq}`. Skipped.")
+                continue
+
+            try:
+                integral = sp.integrate(expr, (x, lower, upper))
+                area = abs(integral)
+
+                if isinstance(area, sp.Rational):
+                    formatted_area = f"{area} (≈ {float(area):.2f})"
+                else:
+                    formatted_area = f"{area.evalf():.2f}"
+
+                results.append(f"Area under `{eq}` from {lower} to {upper}: {formatted_area} units²")
+
+                if isinstance(area, sp.Rational):
+                    total_area += area
+                else:
+                    total_area += area.evalf()
+
+            except Exception as e:
+                results.append(f"Error integrating `{eq}`: {str(e)}")
+
+        if isinstance(total_area, sp.Rational):
+            formatted_total = f"{total_area} (≈ {float(total_area):.2f})"
+        else:
+            formatted_total = f"{total_area.evalf():.2f}"
+
+        results.append(f"\nTotal area: {formatted_total} units²")
+        self.show_plain_text_result_dialog("\n".join(results))
+        self.main_window.left_section.setCurrentIndex(2)
